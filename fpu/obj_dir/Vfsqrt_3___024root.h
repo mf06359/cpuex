@@ -25,6 +25,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vfsqrt_3___024root final : public VerilatedMo
     CData/*0:0*/ fsqrt__DOT__sign_out;
     CData/*7:0*/ fsqrt__DOT__exp_reg;
     CData/*0:0*/ fsqrt__DOT__sign_reg;
+    CData/*7:0*/ fsqrt__DOT__exp_final;
     CData/*0:0*/ __VstlFirstIteration;
     CData/*0:0*/ __Vtrigprevexpr___TOP__clk__0;
     CData/*0:0*/ __Vtrigprevexpr___TOP__rst_n__0;
@@ -36,7 +37,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vfsqrt_3___024root final : public VerilatedMo
     IData/*23:0*/ fsqrt__DOT__double_x1;
     IData/*23:0*/ fsqrt__DOT__a_x0_x0;
     IData/*23:0*/ fsqrt__DOT__a_x0_reg;
-    IData/*23:0*/ fsqrt__DOT__result_inner;
+    IData/*22:0*/ fsqrt__DOT__mant_final;
     IData/*31:0*/ __VactIterCount;
     VlUnpacked<IData/*23:0*/, 1024> fsqrt__DOT__lut;
     VlTriggerVec<1> __VstlTriggered;

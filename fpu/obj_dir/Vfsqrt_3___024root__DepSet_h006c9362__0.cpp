@@ -18,6 +18,8 @@ VL_INLINE_OPT void Vfsqrt_3___024root___nba_sequent__TOP__0(Vfsqrt_3___024root* 
     // Init
     QData/*47:0*/ fsqrt__DOT__mul_reg;
     fsqrt__DOT__mul_reg = 0;
+    IData/*23:0*/ fsqrt__DOT__result_inner;
+    fsqrt__DOT__result_inner = 0;
     CData/*2:0*/ __Vdly__fsqrt__DOT__is_abnormal_reg;
     __Vdly__fsqrt__DOT__is_abnormal_reg = 0;
     CData/*2:0*/ __Vdly__fsqrt__DOT__is_zero_reg;
@@ -47,11 +49,7 @@ VL_INLINE_OPT void Vfsqrt_3___024root___nba_sequent__TOP__0(Vfsqrt_3___024root* 
         vlSelf->fsqrt__DOT__double_x1 = (0xffffffU 
                                          & ((IData)(0xc00000U) 
                                             - vlSelf->fsqrt__DOT__a_x0_x0));
-        vlSelf->fsqrt__DOT__a_x0_reg = (0xffffffU & (IData)(
-                                                            (0xffffffULL 
-                                                             & (((QData)((IData)(vlSelf->fsqrt__DOT__a_fixed)) 
-                                                                 * (QData)((IData)(vlSelf->fsqrt__DOT__x_0))) 
-                                                                >> 0x18U))));
+        vlSelf->fsqrt__DOT__exp_reg = vlSelf->fsqrt__DOT__exp_out;
         vlSelf->result = ((2U & (IData)(vlSelf->fsqrt__DOT__is_zero_reg))
                            ? ((IData)(vlSelf->fsqrt__DOT__sign_reg) 
                               << 0x1fU) : ((2U & (IData)(vlSelf->fsqrt__DOT__is_abnormal_reg))
@@ -60,10 +58,21 @@ VL_INLINE_OPT void Vfsqrt_3___024root___nba_sequent__TOP__0(Vfsqrt_3___024root* 
                                                   << 0x1fU))
                                             : (((IData)(vlSelf->fsqrt__DOT__sign_reg) 
                                                 << 0x1fU) 
-                                               | (((IData)(vlSelf->fsqrt__DOT__exp_reg) 
+                                               | (((IData)(vlSelf->fsqrt__DOT__exp_final) 
                                                    << 0x17U) 
-                                                  | (0x7fffffU 
-                                                     & vlSelf->fsqrt__DOT__result_inner)))));
+                                                  | vlSelf->fsqrt__DOT__mant_final))));
+        vlSelf->fsqrt__DOT__a_x0_reg = (0xffffffU & (IData)(
+                                                            (0xffffffULL 
+                                                             & (((QData)((IData)(vlSelf->fsqrt__DOT__a_fixed)) 
+                                                                 * (QData)((IData)(vlSelf->fsqrt__DOT__x_0))) 
+                                                                >> 0x18U))));
+        vlSelf->fsqrt__DOT__exp_out = (0xffU & ((IData)(0x7fU) 
+                                                + (0xffU 
+                                                   & (((0xffU 
+                                                        & (vlSelf->input_a 
+                                                           >> 0x17U)) 
+                                                       - (IData)(0x7fU)) 
+                                                      >> 1U))));
         vlSelf->fsqrt__DOT__a_fixed = ((0x800000U & vlSelf->input_a)
                                         ? (0x400000U 
                                            | (0x3fffffU 
@@ -72,36 +81,43 @@ VL_INLINE_OPT void Vfsqrt_3___024root___nba_sequent__TOP__0(Vfsqrt_3___024root* 
                                         : (0x800000U 
                                            | (0x7fffffU 
                                               & vlSelf->input_a)));
-        vlSelf->fsqrt__DOT__exp_reg = vlSelf->fsqrt__DOT__exp_out;
-        vlSelf->fsqrt__DOT__exp_out = (0xffU & ((IData)(0x7fU) 
-                                                + (0xffU 
-                                                   & (((0xffU 
-                                                        & (vlSelf->input_a 
-                                                           >> 0x17U)) 
-                                                       - (IData)(0x7fU)) 
-                                                      >> 1U))));
     } else {
         vlSelf->fsqrt__DOT__valid_reg = 0U;
         __Vdly__fsqrt__DOT__is_zero_reg = 0U;
         __Vdly__fsqrt__DOT__is_abnormal_reg = 0U;
         vlSelf->fsqrt__DOT__double_x1 = 0U;
-        vlSelf->fsqrt__DOT__a_x0_reg = 0U;
-        vlSelf->result = 0U;
-        vlSelf->fsqrt__DOT__a_fixed = 0U;
         vlSelf->fsqrt__DOT__exp_reg = 0U;
+        vlSelf->result = 0U;
+        vlSelf->fsqrt__DOT__a_x0_reg = 0U;
         vlSelf->fsqrt__DOT__exp_out = 0U;
+        vlSelf->fsqrt__DOT__a_fixed = 0U;
     }
     vlSelf->fsqrt__DOT__is_zero_reg = __Vdly__fsqrt__DOT__is_zero_reg;
     vlSelf->fsqrt__DOT__is_abnormal_reg = __Vdly__fsqrt__DOT__is_abnormal_reg;
     vlSelf->out_valid = (1U & ((IData)(vlSelf->fsqrt__DOT__valid_reg) 
                                >> 2U));
-    fsqrt__DOT__mul_reg = (0xffffffffffffULL & ((QData)((IData)(vlSelf->fsqrt__DOT__a_x0_reg)) 
-                                                * (QData)((IData)(vlSelf->fsqrt__DOT__double_x1))));
-    vlSelf->fsqrt__DOT__result_inner = (0xffffffU & (IData)(
-                                                            (fsqrt__DOT__mul_reg 
-                                                             >> 0x16U)));
     vlSelf->fsqrt__DOT__sign_reg = ((IData)(vlSelf->rst_n) 
                                     && (IData)(vlSelf->fsqrt__DOT__sign_out));
+    fsqrt__DOT__mul_reg = (0xffffffffffffULL & ((QData)((IData)(vlSelf->fsqrt__DOT__a_x0_reg)) 
+                                                * (QData)((IData)(vlSelf->fsqrt__DOT__double_x1))));
+    fsqrt__DOT__result_inner = (0xffffffU & ((IData)(
+                                                     (fsqrt__DOT__mul_reg 
+                                                      >> 0x16U)) 
+                                             + (1U 
+                                                & (IData)(
+                                                          (fsqrt__DOT__mul_reg 
+                                                           >> 0x15U)))));
+    if ((0x800000U & fsqrt__DOT__result_inner)) {
+        vlSelf->fsqrt__DOT__exp_final = vlSelf->fsqrt__DOT__exp_reg;
+        vlSelf->fsqrt__DOT__mant_final = (0x7fffffU 
+                                          & fsqrt__DOT__result_inner);
+    } else {
+        vlSelf->fsqrt__DOT__exp_final = (0xffU & ((IData)(vlSelf->fsqrt__DOT__exp_reg) 
+                                                  - (IData)(1U)));
+        vlSelf->fsqrt__DOT__mant_final = (0x7ffffeU 
+                                          & (fsqrt__DOT__result_inner 
+                                             << 1U));
+    }
     vlSelf->fsqrt__DOT__sign_out = ((IData)(vlSelf->rst_n) 
                                     && (vlSelf->input_a 
                                         >> 0x1fU));
