@@ -106,6 +106,14 @@ module cache (
             fifo.req_en <= 1'b0;
             req_rdy_reg <= 1'b1;
             output_data_reg <= 32'b0;
+
+            for (int i = 0; i < NUM_WAYS; i++) begin
+                plru_bits[i] <= 3'b000;
+                for (int j = 0; j < NUM_WAYS; j++) begin
+                    valid_bits[i][j] <= 1'b0;
+                    dirty_bits[i][j] <= 1'b0;
+                end
+            end
         end else begin
             case (state)
                 IDLE: begin
