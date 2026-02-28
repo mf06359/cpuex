@@ -116,45 +116,45 @@ module cache (
                         fifo.req_en <= 1'b0;
                         req_rdy_reg <= 1'b0;
 
-                        tag_reg <= input_addr[31:9];
-                        index_reg <= input_addr[8:2];
-                        offset_reg <= input_addr[1:0];
+                        tag_reg <= input_addr[31:11];
+                        index_reg <= input_addr[10:4];
+                        offset_reg <= input_addr[3:0];
                         
                         input_addr_reg <= input_addr;
                         input_data_reg <= input_data;
 
-                        cache_tag_reg[0] <= cache_tag_w0[input_addr[8:2]];
-                        cache_tag_reg[1] <= cache_tag_w1[input_addr[8:2]];
-                        cache_tag_reg[2] <= cache_tag_w2[input_addr[8:2]];
-                        cache_tag_reg[3] <= cache_tag_w3[input_addr[8:2]];
+                        cache_tag_reg[0] <= cache_tag_w0[input_addr[10:4]];
+                        cache_tag_reg[1] <= cache_tag_w1[input_addr[10:4]];
+                        cache_tag_reg[2] <= cache_tag_w2[input_addr[10:4]];
+                        cache_tag_reg[3] <= cache_tag_w3[input_addr[10:4]];
 
-                        cache_data_reg[0] <= cache_memory_w0[input_addr[8:2]];
-                        cache_data_reg[1] <= cache_memory_w1[input_addr[8:2]]; 
-                        cache_data_reg[2] <= cache_memory_w2[input_addr[8:2]];  
-                        cache_data_reg[3] <= cache_memory_w3[input_addr[8:2]]; 
+                        cache_data_reg[0] <= cache_memory_w0[input_addr[10:4]];
+                        cache_data_reg[1] <= cache_memory_w1[input_addr[10:4]]; 
+                        cache_data_reg[2] <= cache_memory_w2[input_addr[10:4]];  
+                        cache_data_reg[3] <= cache_memory_w3[input_addr[10:4]]; 
 
-                        dirty_bit_reg[0] <= dirty_bits[input_addr[8:2]][0];
-                        dirty_bit_reg[1] <= dirty_bits[input_addr[8:2]][1];
-                        dirty_bit_reg[2] <= dirty_bits[input_addr[8:2]][2];
-                        dirty_bit_reg[3] <= dirty_bits[input_addr[8:2]][3];
+                        dirty_bit_reg[0] <= dirty_bits[input_addr[10:4]][0];
+                        dirty_bit_reg[1] <= dirty_bits[input_addr[10:4]][1];
+                        dirty_bit_reg[2] <= dirty_bits[input_addr[10:4]][2];
+                        dirty_bit_reg[3] <= dirty_bits[input_addr[10:4]][3];
 
-                        valid_bit_reg[0] <= valid_bits[input_addr[8:2]][0];
-                        valid_bit_reg[1] <= valid_bits[input_addr[8:2]][1];
-                        valid_bit_reg[2] <= valid_bits[input_addr[8:2]][2];
-                        valid_bit_reg[3] <= valid_bits[input_addr[8:2]][3];
+                        valid_bit_reg[0] <= valid_bits[input_addr[10:4]][0];
+                        valid_bit_reg[1] <= valid_bits[input_addr[10:4]][1];
+                        valid_bit_reg[2] <= valid_bits[input_addr[10:4]][2];
+                        valid_bit_reg[3] <= valid_bits[input_addr[10:4]][3];
 
-                        if (!valid_bits[input_addr[9:2]][0]) begin
+                        if (!valid_bits[input_addr[10:4]][0]) begin
                             oldest_way <= 2'd0;
-                        end else if (!valid_bits[input_addr[8:2]][1]) begin
+                        end else if (!valid_bits[input_addr[10:4]][1]) begin
                             oldest_way <= 2'd1;
-                        end else if (!valid_bits[input_addr[8:2]][2]) begin
+                        end else if (!valid_bits[input_addr[10:4]][2]) begin
                             oldest_way <= 2'd2;
-                        end else if (!valid_bits[input_addr[8:2]][3]) begin
+                        end else if (!valid_bits[input_addr[10:4]][3]) begin
                             oldest_way <= 2'd3;
                         end else begin
-                            oldest_way <= plru_bits[input_addr[8:2]][2] ? 
-                                        (plru_bits[input_addr[8:2]][0] ? 2'd3 : 2'd2) : 
-                                        (plru_bits[input_addr[8:2]][1] ? 2'd1 : 2'd0);
+                            oldest_way <= plru_bits[input_addr[10:4]][2] ? 
+                                        (plru_bits[input_addr[10:4]][0] ? 2'd3 : 2'd2) : 
+                                        (plru_bits[input_addr[10:4]][1] ? 2'd1 : 2'd0);
                         end
 
                         state <= COMPI;
@@ -164,7 +164,7 @@ module cache (
                 COMPI: begin
                     if (read_rise_reg) begin
                         if (valid_bit_reg[0] && (cache_tag_reg[0] == tag_reg)) begin // HIT
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: output_data_reg <= cache_data_reg[0][31:0];
                                 2'b01: output_data_reg <= cache_data_reg[0][63:32];
                                 2'b10: output_data_reg <= cache_data_reg[0][95:64];
@@ -173,7 +173,7 @@ module cache (
                             plru_bits[index_reg] <= {2'b11, plru_bits[index_reg][0]};
                             state <= DONE;
                         end else if (valid_bit_reg[1] && (cache_tag_reg[1] == tag_reg)) begin // HIT
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: output_data_reg <= cache_data_reg[1][31:0];
                                 2'b01: output_data_reg <= cache_data_reg[1][63:32];
                                 2'b10: output_data_reg <= cache_data_reg[1][95:64];
@@ -182,7 +182,7 @@ module cache (
                             plru_bits[index_reg] <= {2'b10, plru_bits[index_reg][0]};
                             state <= DONE;
                         end else if (valid_bit_reg[2] && (cache_tag_reg[2] == tag_reg)) begin // HIT
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: output_data_reg <= cache_data_reg[2][31:0];
                                 2'b01: output_data_reg <= cache_data_reg[2][63:32];
                                 2'b10: output_data_reg <= cache_data_reg[2][95:64];
@@ -191,7 +191,7 @@ module cache (
                             plru_bits[index_reg] <= {1'b0, plru_bits[index_reg][1], 1'b1};
                             state <= DONE;
                         end else if (valid_bit_reg[3] && (cache_tag_reg[3] == tag_reg)) begin // HIT
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: output_data_reg <= cache_data_reg[3][31:0];
                                 2'b01: output_data_reg <= cache_data_reg[3][63:32];
                                 2'b10: output_data_reg <= cache_data_reg[3][95:64];
@@ -203,7 +203,7 @@ module cache (
                             if (valid_bit_reg[oldest_way] && dirty_bit_reg[oldest_way]) begin
                                 // Write Back
                                 fifo.req.cmd <= 1'b0; 
-                                fifo.req.addr <= {cache_tag_reg[oldest_way], index_reg, 2'b00};
+                                fifo.req.addr <= {cache_tag_reg[oldest_way], index_reg, 4'b0000};
                                 fifo.req.data <= (oldest_way == 0) ? cache_data_reg[0] :
                                                 (oldest_way == 1) ? cache_data_reg[1] :
                                                 (oldest_way == 2) ? cache_data_reg[2] : cache_data_reg[3];
@@ -212,7 +212,7 @@ module cache (
                             end else begin
                                 // Allocate (Read)
                                 fifo.req.cmd <= 1'b1; 
-                                fifo.req.addr <= {tag_reg, index_reg, 2'b00};
+                                fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
                                 fifo.req.data <= 128'b0;
                                 fifo.req_en <= 1'b1;
                                 state <= WAIT_READ_LINE_FOR_READ;
@@ -221,7 +221,7 @@ module cache (
 
                     end else if (write_rise_reg) begin
                         if (valid_bit_reg[0] && (cache_tag_reg[0] == tag_reg)) begin // HIT
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: cache_memory_w0[index_reg] <= {cache_data_reg[0][127:32], input_data_reg};
                                 2'b01: cache_memory_w0[index_reg] <= {cache_data_reg[0][127:64], input_data_reg, cache_data_reg[0][31:0]};
                                 2'b10: cache_memory_w0[index_reg] <= {cache_data_reg[0][127:96], input_data_reg, cache_data_reg[0][63:0]};
@@ -233,7 +233,7 @@ module cache (
                             plru_bits[index_reg] <= {2'b11, plru_bits[index_reg][0]};
                             state <= DONE;
                         end else if (valid_bit_reg[1] && (cache_tag_reg[1] == tag_reg)) begin // HIT
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: cache_memory_w1[index_reg] <= {cache_data_reg[1][127:32], input_data_reg};
                                 2'b01: cache_memory_w1[index_reg] <= {cache_data_reg[1][127:64], input_data_reg, cache_data_reg[1][31:0]};
                                 2'b10: cache_memory_w1[index_reg] <= {cache_data_reg[1][127:96], input_data_reg, cache_data_reg[1][63:0]};
@@ -245,7 +245,7 @@ module cache (
                             plru_bits[index_reg] <= {2'b10, plru_bits[index_reg][0]};
                             state <= DONE;
                         end else if (valid_bit_reg[2] && (cache_tag_reg[2] == tag_reg)) begin // HIT
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: cache_memory_w2[index_reg] <= {cache_data_reg[2][127:32], input_data_reg};
                                 2'b01: cache_memory_w2[index_reg] <= {cache_data_reg[2][127:64], input_data_reg, cache_data_reg[2][31:0]};
                                 2'b10: cache_memory_w2[index_reg] <= {cache_data_reg[2][127:96], input_data_reg, cache_data_reg[2][63:0]};
@@ -257,7 +257,7 @@ module cache (
                             plru_bits[index_reg] <= {1'b0, plru_bits[index_reg][1], 1'b1};  
                             state <= DONE;
                         end else if (valid_bit_reg[3] && (cache_tag_reg[3] == tag_reg)) begin // HIT
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: cache_memory_w3[index_reg] <= {cache_data_reg[3][127:32], input_data_reg};
                                 2'b01: cache_memory_w3[index_reg] <= {cache_data_reg[3][127:64], input_data_reg, cache_data_reg[3][31:0]};
                                 2'b10: cache_memory_w3[index_reg] <= {cache_data_reg[3][127:96], input_data_reg, cache_data_reg[3][63:0]};
@@ -272,7 +272,7 @@ module cache (
                             if (valid_bit_reg[oldest_way] && dirty_bit_reg[oldest_way]) begin
                                 // Write Back
                                 fifo.req.cmd <= 1'b0;
-                                fifo.req.addr <= {cache_tag_reg[oldest_way], index_reg, 2'b00};
+                                fifo.req.addr <= {cache_tag_reg[oldest_way], index_reg, 4'b0000};
                                 fifo.req.data <= (oldest_way == 0) ? cache_data_reg[0] :
                                                 (oldest_way == 1) ? cache_data_reg[1] :
                                                 (oldest_way == 2) ? cache_data_reg[2] : cache_data_reg[3];
@@ -281,7 +281,7 @@ module cache (
                             end else begin
                                 // Allocate (Read)
                                 fifo.req.cmd <= 1'b1;
-                                fifo.req.addr <= {tag_reg, index_reg, 2'b00};
+                                fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
                                 fifo.req.data <= 128'b0;
                                 fifo.req_en <= 1'b1;
                                 state <= WAIT_READ_LINE_FOR_WRITE;
@@ -293,7 +293,7 @@ module cache (
                 WAIT_WRITE_BACK_FOR_READ: begin
                     if (fifo.req_rdy) begin
                         fifo.req.cmd <= 1'b1; // read
-                        fifo.req.addr <= {tag_reg, index_reg, 2'b00};
+                        fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
                         fifo.req.data <= 128'b0;
                         fifo.req_en <= 1'b1;
                         state <= WAIT_READ_LINE_FOR_READ;
@@ -303,7 +303,7 @@ module cache (
                 WAIT_WRITE_BACK_FOR_WRITE: begin
                     if (fifo.req_rdy) begin
                         fifo.req.cmd <= 1'b1; // read
-                        fifo.req.addr <= {tag_reg, index_reg, 2'b00};
+                        fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
                         fifo.req.data <= 128'b0;
                         fifo.req_en <= 1'b1;
                         state <= WAIT_READ_LINE_FOR_WRITE;
@@ -328,7 +328,7 @@ module cache (
                     if (fifo.rsp_en) begin
                         if (oldest_way == 0) begin
                             cache_tag_w0[index_reg] <= tag_reg;
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: cache_memory_w0[index_reg] <= {fifo.rsp.data[127:32], input_data_reg};
                                 2'b01: cache_memory_w0[index_reg] <= {fifo.rsp.data[127:64], input_data_reg, fifo.rsp.data[31:0]};
                                 2'b10: cache_memory_w0[index_reg] <= {fifo.rsp.data[127:96], input_data_reg, fifo.rsp.data[63:0]};
@@ -336,7 +336,7 @@ module cache (
                             endcase
                         end else if (oldest_way == 1) begin
                             cache_tag_w1[index_reg] <= tag_reg;
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: cache_memory_w1[index_reg] <= {fifo.rsp.data[127:32], input_data_reg};
                                 2'b01: cache_memory_w1[index_reg] <= {fifo.rsp.data[127:64], input_data_reg, fifo.rsp.data[31:0]};
                                 2'b10: cache_memory_w1[index_reg] <= {fifo.rsp.data[127:96], input_data_reg, fifo.rsp.data[63:0]};
@@ -344,7 +344,7 @@ module cache (
                             endcase
                         end else if (oldest_way == 2) begin
                             cache_tag_w2[index_reg] <= tag_reg;
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: cache_memory_w2[index_reg] <= {fifo.rsp.data[127:32], input_data_reg};
                                 2'b01: cache_memory_w2[index_reg] <= {fifo.rsp.data[127:64], input_data_reg, fifo.rsp.data[31:0]};
                                 2'b10: cache_memory_w2[index_reg] <= {fifo.rsp.data[127:96], input_data_reg, fifo.rsp.data[63:0]};
@@ -352,7 +352,7 @@ module cache (
                             endcase
                         end else begin
                             cache_tag_w3[index_reg] <= tag_reg;
-                            case (offset_reg)
+                            case (offset_reg[3:2])
                                 2'b00: cache_memory_w3[index_reg] <= {fifo.rsp.data[127:32], input_data_reg};
                                 2'b01: cache_memory_w3[index_reg] <= {fifo.rsp.data[127:64], input_data_reg, fifo.rsp.data[31:0]};
                                 2'b10: cache_memory_w3[index_reg] <= {fifo.rsp.data[127:96], input_data_reg, fifo.rsp.data[63:0]};
@@ -387,7 +387,7 @@ module cache (
                         end
                         valid_bits[index_reg][oldest_way] <= 1'b1;
                         dirty_bits[index_reg][oldest_way] <= 1'b0;
-                        case (offset_reg)
+                        case (offset_reg[3:2])
                             2'b00: output_data_reg <= fifo.rsp.data[31:0];
                             2'b01: output_data_reg <= fifo.rsp.data[63:32];
                             2'b10: output_data_reg <= fifo.rsp.data[95:64];
