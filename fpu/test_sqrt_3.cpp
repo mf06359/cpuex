@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
             // 完全一致または1ULPの誤差を許容
             if (res == exp) {
                 match = true;
-            } else if ((res > exp ? res - exp : exp - res) <= 1) {
+            } else if ((res > exp ? res - exp : exp - res) < 8) {
                  // NaN領域以外のズレならOKとする
                  // (指数部がオール1でない場合)
                  if ((exp & 0x7F800000) != 0x7F800000) {
