@@ -54,13 +54,19 @@ fmul:
 # ------------------------------------------
 # 4. fsqrt_10 (test_sqrt.cpp)
 # ------------------------------------------
-fsqrt:
+fsqrt_10:
 	@echo "Building fsqrt_10..."
 	$(VERILATOR) $(VFLAGS) fsqrt_10.sv test_sqrt.cpp \
 		--top-module fsqrt --prefix Vfsqrt_10 -o test_sqrt
 	@echo "Running test_sqrt..."
 	./obj_dir/test_sqrt
 
+fsqrt_3:
+	@echo "Building fsqrt_3..."
+	$(VERILATOR) $(VFLAGS) fsqrt_3.sv test_sqrt_3.cpp \
+		--top-module fsqrt --prefix Vfsqrt_3 -o test_sqrt
+	@echo "Running test_sqrt..."
+	./obj_dir/test_sqrt
 # ------------------------------------------
 # 5. itof (test_itof.cpp)
 # ------------------------------------------
