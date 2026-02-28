@@ -115,10 +115,23 @@ end
 
 logic [47:0] mul_reg;
 logic [23:0] result_inner;
+logic [7:0] exp_final;
+logic [22:0] mant_final;
 
 always_comb begin
   mul_reg = 48'(a_x0_reg) * double_x1;
-  result_inner = mul_reg[45:22];
+  result_inner = mul_reg[46:22] + mul_reg[21];
+
+  if (result_inner[24]) begin
+    exp_final = exp_reg + 8'd1;
+    mant_final = result_inner[23:1];
+  end else if (result_inner[23]) begin
+    exp_final = exp_reg;
+    mant_final = result_inner[22:0];
+  end else begin
+    exp_final = exp_reg - 8'd1;
+    mant_final = {result_inner[21:0], 1'b0};
+  end       
 end
 
 always_ff @(posedge clk or negedge rst_n) begin
@@ -130,7 +143,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     end else if (is_abnormal_final) begin
       result <= {sign_reg, 8'hFF, 23'b0}; 
     end else begin
-      result <= {sign_reg, exp_reg, result_inner[22:0]};
+      result <= {sign_reg, exp_final, mant_final};
     end
   end
 end
