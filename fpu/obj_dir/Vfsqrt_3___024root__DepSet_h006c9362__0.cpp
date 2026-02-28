@@ -46,10 +46,19 @@ VL_INLINE_OPT void Vfsqrt_3___024root___nba_sequent__TOP__0(Vfsqrt_3___024root* 
                                                   (0xffU 
                                                    & (vlSelf->input_a 
                                                       >> 0x17U))));
+        vlSelf->fsqrt__DOT__exp_reg = vlSelf->fsqrt__DOT__exp_out;
+        vlSelf->fsqrt__DOT__a_x0_reg = (0xffffffU & (IData)(
+                                                            (0xffffffULL 
+                                                             & (((QData)((IData)(vlSelf->fsqrt__DOT__a_fixed)) 
+                                                                 * (QData)((IData)(vlSelf->fsqrt__DOT__x_0))) 
+                                                                >> 0x18U))));
         vlSelf->fsqrt__DOT__double_x1 = (0xffffffU 
                                          & ((IData)(0xc00000U) 
-                                            - vlSelf->fsqrt__DOT__a_x0_x0));
-        vlSelf->fsqrt__DOT__exp_reg = vlSelf->fsqrt__DOT__exp_out;
+                                            - (IData)(
+                                                      (0xffffffULL 
+                                                       & (((QData)((IData)(vlSelf->fsqrt__DOT__a_fixed)) 
+                                                           * (QData)((IData)(vlSelf->fsqrt__DOT__x0_x0))) 
+                                                          >> 0x18U)))));
         vlSelf->result = ((2U & (IData)(vlSelf->fsqrt__DOT__is_zero_reg))
                            ? ((IData)(vlSelf->fsqrt__DOT__sign_reg) 
                               << 0x1fU) : ((2U & (IData)(vlSelf->fsqrt__DOT__is_abnormal_reg))
@@ -61,11 +70,6 @@ VL_INLINE_OPT void Vfsqrt_3___024root___nba_sequent__TOP__0(Vfsqrt_3___024root* 
                                                | (((IData)(vlSelf->fsqrt__DOT__exp_final) 
                                                    << 0x17U) 
                                                   | vlSelf->fsqrt__DOT__mant_final))));
-        vlSelf->fsqrt__DOT__a_x0_reg = (0xffffffU & (IData)(
-                                                            (0xffffffULL 
-                                                             & (((QData)((IData)(vlSelf->fsqrt__DOT__a_fixed)) 
-                                                                 * (QData)((IData)(vlSelf->fsqrt__DOT__x_0))) 
-                                                                >> 0x18U))));
         vlSelf->fsqrt__DOT__exp_out = (0xffU & ((IData)(0x7fU) 
                                                 + (0xffU 
                                                    & (((0xffU 
@@ -85,10 +89,10 @@ VL_INLINE_OPT void Vfsqrt_3___024root___nba_sequent__TOP__0(Vfsqrt_3___024root* 
         vlSelf->fsqrt__DOT__valid_reg = 0U;
         __Vdly__fsqrt__DOT__is_zero_reg = 0U;
         __Vdly__fsqrt__DOT__is_abnormal_reg = 0U;
-        vlSelf->fsqrt__DOT__double_x1 = 0U;
         vlSelf->fsqrt__DOT__exp_reg = 0U;
-        vlSelf->result = 0U;
         vlSelf->fsqrt__DOT__a_x0_reg = 0U;
+        vlSelf->fsqrt__DOT__double_x1 = 0U;
+        vlSelf->result = 0U;
         vlSelf->fsqrt__DOT__exp_out = 0U;
         vlSelf->fsqrt__DOT__a_fixed = 0U;
     }
@@ -96,8 +100,6 @@ VL_INLINE_OPT void Vfsqrt_3___024root___nba_sequent__TOP__0(Vfsqrt_3___024root* 
     vlSelf->fsqrt__DOT__is_abnormal_reg = __Vdly__fsqrt__DOT__is_abnormal_reg;
     vlSelf->out_valid = (1U & ((IData)(vlSelf->fsqrt__DOT__valid_reg) 
                                >> 2U));
-    vlSelf->fsqrt__DOT__sign_reg = ((IData)(vlSelf->rst_n) 
-                                    && (IData)(vlSelf->fsqrt__DOT__sign_out));
     fsqrt__DOT__mul_reg = (0xffffffffffffULL & ((QData)((IData)(vlSelf->fsqrt__DOT__a_x0_reg)) 
                                                 * (QData)((IData)(vlSelf->fsqrt__DOT__double_x1))));
     fsqrt__DOT__result_inner = (0xffffffU & ((IData)(
@@ -118,6 +120,8 @@ VL_INLINE_OPT void Vfsqrt_3___024root___nba_sequent__TOP__0(Vfsqrt_3___024root* 
                                           & (fsqrt__DOT__result_inner 
                                              << 1U));
     }
+    vlSelf->fsqrt__DOT__sign_reg = ((IData)(vlSelf->rst_n) 
+                                    && (IData)(vlSelf->fsqrt__DOT__sign_out));
     vlSelf->fsqrt__DOT__sign_out = ((IData)(vlSelf->rst_n) 
                                     && (vlSelf->input_a 
                                         >> 0x1fU));
@@ -130,25 +134,8 @@ VL_INLINE_OPT void Vfsqrt_3___024root___nba_sequent__TOP__1(Vfsqrt_3___024root* 
     // Body
     vlSelf->fsqrt__DOT__x_0 = vlSelf->fsqrt__DOT__lut
         [(0x3ffU & (vlSelf->input_a >> 0xeU))];
-}
-
-VL_INLINE_OPT void Vfsqrt_3___024root___nba_comb__TOP__0(Vfsqrt_3___024root* vlSelf) {
-    if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___nba_comb__TOP__0\n"); );
-    // Init
-    IData/*23:0*/ fsqrt__DOT__x0_x0;
-    fsqrt__DOT__x0_x0 = 0;
-    // Body
-    fsqrt__DOT__x0_x0 = (0xffffffU & (IData)((0xffffffULL 
-                                              & (((QData)((IData)(vlSelf->fsqrt__DOT__x_0)) 
-                                                  * (QData)((IData)(vlSelf->fsqrt__DOT__x_0))) 
-                                                 >> 0x18U))));
-    vlSelf->fsqrt__DOT__a_x0_x0 = (0xffffffU & (IData)(
-                                                       (0xffffffULL 
-                                                        & (((QData)((IData)(vlSelf->fsqrt__DOT__a_fixed)) 
-                                                            * (QData)((IData)(fsqrt__DOT__x0_x0))) 
-                                                           >> 0x18U))));
+    vlSelf->fsqrt__DOT__x0_x0 = vlSelf->fsqrt__DOT__lut_sq
+        [(0x3ffU & (vlSelf->input_a >> 0xeU))];
 }
 
 void Vfsqrt_3___024root___eval_nba(Vfsqrt_3___024root* vlSelf) {
@@ -161,9 +148,6 @@ void Vfsqrt_3___024root___eval_nba(Vfsqrt_3___024root* vlSelf) {
     }
     if ((2ULL & vlSelf->__VnbaTriggered.word(0U))) {
         Vfsqrt_3___024root___nba_sequent__TOP__1(vlSelf);
-    }
-    if ((3ULL & vlSelf->__VnbaTriggered.word(0U))) {
-        Vfsqrt_3___024root___nba_comb__TOP__0(vlSelf);
     }
 }
 

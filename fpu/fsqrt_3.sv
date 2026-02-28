@@ -10,8 +10,14 @@ module fsqrt (
 );
 
 (* ram_style = "block" *) reg [23:0] lut [0:1023];
+(* ram_style = "block" *) reg [23:0] lut_sq [0:1023];
 
-initial $readmemh("fsqrt_table.hex", lut);
+initial begin
+  $readmemh("fsqrt_table.hex", lut);
+  for (int i = 0; i < 1024; i++) begin
+    lut_sq[i] = (48'(lut[i]) * lut[i]) >> 24;
+  end
+end
 
 logic [2:0] valid_reg;
 logic [2:0] is_zero_reg;
@@ -50,12 +56,11 @@ logic [7:0] exp_out;
 logic sign_out;
 
 logic [23:0] a_fixed;
-
 logic [23:0] x_0;
+logic [23:0] x0_x0;
 logic [23:0] x_1;
 logic [9:0] lut_addr;
 assign lut_addr = {e_1[0], m_1[22:14]};
-
 
 assign {s_1, e_1, m_1} = input_a; 
 
@@ -63,7 +68,8 @@ logic signed [8:0] e_wo_bias;
 assign e_wo_bias = $signed({1'b0, e_1}) - 9'sd127;
 
 always_ff @(posedge clk) begin
-  x_0 <= lut[lut_addr]; 
+  x_0 <= lut[lut_addr];
+  x0_x0 <= lut_sq[lut_addr];
 end
 
 always_ff @(posedge clk or negedge rst_n) begin
@@ -84,12 +90,10 @@ end
 
 
 logic [23:0] double_x1;
-logic [23:0] x0_x0;
 logic [23:0] a_x0_x0;
 logic [23:0] a_x0;
 
 always_comb begin
-  x0_x0 = (48'(x_0) * x_0) >> 24;
   a_x0_x0 = (48'(a_fixed) * x0_x0) >> 24;
   a_x0 = (48'(a_fixed) * x_0) >> 24;
 end
@@ -148,3 +152,4 @@ always_ff @(posedge clk or negedge rst_n) begin
   end
 end
 endmodule
+

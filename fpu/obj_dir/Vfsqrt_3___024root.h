@@ -34,12 +34,13 @@ class alignas(VL_CACHE_LINE_BYTES) Vfsqrt_3___024root final : public VerilatedMo
     VL_OUT(result,31,0);
     IData/*23:0*/ fsqrt__DOT__a_fixed;
     IData/*23:0*/ fsqrt__DOT__x_0;
+    IData/*23:0*/ fsqrt__DOT__x0_x0;
     IData/*23:0*/ fsqrt__DOT__double_x1;
-    IData/*23:0*/ fsqrt__DOT__a_x0_x0;
     IData/*23:0*/ fsqrt__DOT__a_x0_reg;
     IData/*22:0*/ fsqrt__DOT__mant_final;
     IData/*31:0*/ __VactIterCount;
     VlUnpacked<IData/*23:0*/, 1024> fsqrt__DOT__lut;
+    VlUnpacked<IData/*23:0*/, 1024> fsqrt__DOT__lut_sq;
     VlTriggerVec<1> __VstlTriggered;
     VlTriggerVec<2> __VactTriggered;
     VlTriggerVec<2> __VnbaTriggered;

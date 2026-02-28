@@ -28,6 +28,8 @@ VL_ATTR_COLD void Vfsqrt_3___024root___eval_initial__TOP(Vfsqrt_3___024root* vlS
     Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___eval_initial__TOP\n"); );
     // Init
+    IData/*31:0*/ fsqrt__DOT__unnamedblk1__DOT__i;
+    fsqrt__DOT__unnamedblk1__DOT__i = 0;
     VlWide<4>/*127:0*/ __Vtemp_1;
     // Body
     __Vtemp_1[0U] = 0x2e686578U;
@@ -36,6 +38,24 @@ VL_ATTR_COLD void Vfsqrt_3___024root___eval_initial__TOP(Vfsqrt_3___024root* vlS
     __Vtemp_1[3U] = 0x667371U;
     VL_READMEM_N(true, 24, 1024, 0, VL_CVT_PACK_STR_NW(4, __Vtemp_1)
                  ,  &(vlSelf->fsqrt__DOT__lut), 0, ~0ULL);
+    fsqrt__DOT__unnamedblk1__DOT__i = 0U;
+    while (VL_GTS_III(32, 0x400U, fsqrt__DOT__unnamedblk1__DOT__i)) {
+        vlSelf->fsqrt__DOT__lut_sq[(0x3ffU & fsqrt__DOT__unnamedblk1__DOT__i)] 
+            = (0xffffffU & (IData)((0xffffffULL & (
+                                                   ((QData)((IData)(
+                                                                    vlSelf->fsqrt__DOT__lut
+                                                                    [
+                                                                    (0x3ffU 
+                                                                     & fsqrt__DOT__unnamedblk1__DOT__i)])) 
+                                                    * (QData)((IData)(
+                                                                      vlSelf->fsqrt__DOT__lut
+                                                                      [
+                                                                      (0x3ffU 
+                                                                       & fsqrt__DOT__unnamedblk1__DOT__i)]))) 
+                                                   >> 0x18U))));
+        fsqrt__DOT__unnamedblk1__DOT__i = ((IData)(1U) 
+                                           + fsqrt__DOT__unnamedblk1__DOT__i);
+    }
 }
 
 VL_ATTR_COLD void Vfsqrt_3___024root___eval_final(Vfsqrt_3___024root* vlSelf) {
@@ -96,8 +116,6 @@ VL_ATTR_COLD void Vfsqrt_3___024root___stl_sequent__TOP__0(Vfsqrt_3___024root* v
     Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___stl_sequent__TOP__0\n"); );
     // Init
-    IData/*23:0*/ fsqrt__DOT__x0_x0;
-    fsqrt__DOT__x0_x0 = 0;
     QData/*47:0*/ fsqrt__DOT__mul_reg;
     fsqrt__DOT__mul_reg = 0;
     IData/*23:0*/ fsqrt__DOT__result_inner;
@@ -105,15 +123,6 @@ VL_ATTR_COLD void Vfsqrt_3___024root___stl_sequent__TOP__0(Vfsqrt_3___024root* v
     // Body
     vlSelf->out_valid = (1U & ((IData)(vlSelf->fsqrt__DOT__valid_reg) 
                                >> 2U));
-    fsqrt__DOT__x0_x0 = (0xffffffU & (IData)((0xffffffULL 
-                                              & (((QData)((IData)(vlSelf->fsqrt__DOT__x_0)) 
-                                                  * (QData)((IData)(vlSelf->fsqrt__DOT__x_0))) 
-                                                 >> 0x18U))));
-    vlSelf->fsqrt__DOT__a_x0_x0 = (0xffffffU & (IData)(
-                                                       (0xffffffULL 
-                                                        & (((QData)((IData)(vlSelf->fsqrt__DOT__a_fixed)) 
-                                                            * (QData)((IData)(fsqrt__DOT__x0_x0))) 
-                                                           >> 0x18U))));
     fsqrt__DOT__mul_reg = (0xffffffffffffULL & ((QData)((IData)(vlSelf->fsqrt__DOT__a_x0_reg)) 
                                                 * (QData)((IData)(vlSelf->fsqrt__DOT__double_x1))));
     fsqrt__DOT__result_inner = (0xffffffU & ((IData)(
@@ -213,6 +222,9 @@ VL_ATTR_COLD void Vfsqrt_3___024root___ctor_var_reset(Vfsqrt_3___024root* vlSelf
     for (int __Vi0 = 0; __Vi0 < 1024; ++__Vi0) {
         vlSelf->fsqrt__DOT__lut[__Vi0] = VL_RAND_RESET_I(24);
     }
+    for (int __Vi0 = 0; __Vi0 < 1024; ++__Vi0) {
+        vlSelf->fsqrt__DOT__lut_sq[__Vi0] = VL_RAND_RESET_I(24);
+    }
     vlSelf->fsqrt__DOT__valid_reg = VL_RAND_RESET_I(3);
     vlSelf->fsqrt__DOT__is_zero_reg = VL_RAND_RESET_I(3);
     vlSelf->fsqrt__DOT__is_abnormal_reg = VL_RAND_RESET_I(3);
@@ -220,8 +232,8 @@ VL_ATTR_COLD void Vfsqrt_3___024root___ctor_var_reset(Vfsqrt_3___024root* vlSelf
     vlSelf->fsqrt__DOT__sign_out = VL_RAND_RESET_I(1);
     vlSelf->fsqrt__DOT__a_fixed = VL_RAND_RESET_I(24);
     vlSelf->fsqrt__DOT__x_0 = VL_RAND_RESET_I(24);
+    vlSelf->fsqrt__DOT__x0_x0 = VL_RAND_RESET_I(24);
     vlSelf->fsqrt__DOT__double_x1 = VL_RAND_RESET_I(24);
-    vlSelf->fsqrt__DOT__a_x0_x0 = VL_RAND_RESET_I(24);
     vlSelf->fsqrt__DOT__a_x0_reg = VL_RAND_RESET_I(24);
     vlSelf->fsqrt__DOT__exp_reg = VL_RAND_RESET_I(8);
     vlSelf->fsqrt__DOT__sign_reg = VL_RAND_RESET_I(1);
