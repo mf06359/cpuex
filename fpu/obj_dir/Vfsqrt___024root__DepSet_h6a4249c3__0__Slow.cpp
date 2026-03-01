@@ -1,32 +1,32 @@
 // Verilated -*- C++ -*-
 // DESCRIPTION: Verilator output: Design implementation internals
-// See Vfsqrt_3.h for the primary calling header
+// See Vfsqrt.h for the primary calling header
 
-#include "Vfsqrt_3__pch.h"
-#include "Vfsqrt_3___024root.h"
+#include "Vfsqrt__pch.h"
+#include "Vfsqrt___024root.h"
 
-VL_ATTR_COLD void Vfsqrt_3___024root___eval_static(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD void Vfsqrt___024root___eval_static(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___eval_static\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___eval_static\n"); );
 }
 
-VL_ATTR_COLD void Vfsqrt_3___024root___eval_initial__TOP(Vfsqrt_3___024root* vlSelf);
+VL_ATTR_COLD void Vfsqrt___024root___eval_initial__TOP(Vfsqrt___024root* vlSelf);
 
-VL_ATTR_COLD void Vfsqrt_3___024root___eval_initial(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD void Vfsqrt___024root___eval_initial(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___eval_initial\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___eval_initial\n"); );
     // Body
-    Vfsqrt_3___024root___eval_initial__TOP(vlSelf);
+    Vfsqrt___024root___eval_initial__TOP(vlSelf);
     vlSelf->__Vtrigprevexpr___TOP__clk__0 = vlSelf->clk;
     vlSelf->__Vtrigprevexpr___TOP__rst_n__0 = vlSelf->rst_n;
 }
 
-VL_ATTR_COLD void Vfsqrt_3___024root___eval_initial__TOP(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD void Vfsqrt___024root___eval_initial__TOP(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___eval_initial__TOP\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___eval_initial__TOP\n"); );
     // Init
     IData/*31:0*/ fsqrt__DOT__unnamedblk1__DOT__i;
     fsqrt__DOT__unnamedblk1__DOT__i = 0;
@@ -58,21 +58,21 @@ VL_ATTR_COLD void Vfsqrt_3___024root___eval_initial__TOP(Vfsqrt_3___024root* vlS
     }
 }
 
-VL_ATTR_COLD void Vfsqrt_3___024root___eval_final(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD void Vfsqrt___024root___eval_final(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___eval_final\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___eval_final\n"); );
 }
 
 #ifdef VL_DEBUG
-VL_ATTR_COLD void Vfsqrt_3___024root___dump_triggers__stl(Vfsqrt_3___024root* vlSelf);
+VL_ATTR_COLD void Vfsqrt___024root___dump_triggers__stl(Vfsqrt___024root* vlSelf);
 #endif  // VL_DEBUG
-VL_ATTR_COLD bool Vfsqrt_3___024root___eval_phase__stl(Vfsqrt_3___024root* vlSelf);
+VL_ATTR_COLD bool Vfsqrt___024root___eval_phase__stl(Vfsqrt___024root* vlSelf);
 
-VL_ATTR_COLD void Vfsqrt_3___024root___eval_settle(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD void Vfsqrt___024root___eval_settle(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___eval_settle\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___eval_settle\n"); );
     // Init
     IData/*31:0*/ __VstlIterCount;
     CData/*0:0*/ __VstlContinue;
@@ -83,13 +83,13 @@ VL_ATTR_COLD void Vfsqrt_3___024root___eval_settle(Vfsqrt_3___024root* vlSelf) {
     while (__VstlContinue) {
         if (VL_UNLIKELY((0x64U < __VstlIterCount))) {
 #ifdef VL_DEBUG
-            Vfsqrt_3___024root___dump_triggers__stl(vlSelf);
+            Vfsqrt___024root___dump_triggers__stl(vlSelf);
 #endif
             VL_FATAL_MT("fsqrt_3.sv", 3, "", "Settle region did not converge.");
         }
         __VstlIterCount = ((IData)(1U) + __VstlIterCount);
         __VstlContinue = 0U;
-        if (Vfsqrt_3___024root___eval_phase__stl(vlSelf)) {
+        if (Vfsqrt___024root___eval_phase__stl(vlSelf)) {
             __VstlContinue = 1U;
         }
         vlSelf->__VstlFirstIteration = 0U;
@@ -97,10 +97,10 @@ VL_ATTR_COLD void Vfsqrt_3___024root___eval_settle(Vfsqrt_3___024root* vlSelf) {
 }
 
 #ifdef VL_DEBUG
-VL_ATTR_COLD void Vfsqrt_3___024root___dump_triggers__stl(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD void Vfsqrt___024root___dump_triggers__stl(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___dump_triggers__stl\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___dump_triggers__stl\n"); );
     // Body
     if ((1U & (~ (IData)(vlSelf->__VstlTriggered.any())))) {
         VL_DBG_MSGF("         No triggers active\n");
@@ -111,71 +111,74 @@ VL_ATTR_COLD void Vfsqrt_3___024root___dump_triggers__stl(Vfsqrt_3___024root* vl
 }
 #endif  // VL_DEBUG
 
-VL_ATTR_COLD void Vfsqrt_3___024root___stl_sequent__TOP__0(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD void Vfsqrt___024root___stl_sequent__TOP__0(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___stl_sequent__TOP__0\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___stl_sequent__TOP__0\n"); );
     // Init
-    QData/*47:0*/ fsqrt__DOT__mul_reg;
-    fsqrt__DOT__mul_reg = 0;
-    IData/*23:0*/ fsqrt__DOT__result_inner;
+    IData/*24:0*/ fsqrt__DOT__result_inner;
     fsqrt__DOT__result_inner = 0;
     // Body
     vlSelf->out_valid = (1U & ((IData)(vlSelf->fsqrt__DOT__valid_reg) 
-                               >> 2U));
-    fsqrt__DOT__mul_reg = (0xffffffffffffULL & ((QData)((IData)(vlSelf->fsqrt__DOT__a_x0_reg)) 
-                                                * (QData)((IData)(vlSelf->fsqrt__DOT__double_x1))));
-    fsqrt__DOT__result_inner = (0xffffffU & ((IData)(
-                                                     (fsqrt__DOT__mul_reg 
-                                                      >> 0x16U)) 
-                                             + (1U 
-                                                & (IData)(
-                                                          (fsqrt__DOT__mul_reg 
-                                                           >> 0x15U)))));
-    if ((0x800000U & fsqrt__DOT__result_inner)) {
-        vlSelf->fsqrt__DOT__exp_final = vlSelf->fsqrt__DOT__exp_reg;
+                               >> 3U));
+    fsqrt__DOT__result_inner = (0x1ffffffU & ((IData)(
+                                                      (vlSelf->fsqrt__DOT__mul_reg 
+                                                       >> 0x16U)) 
+                                              + (1U 
+                                                 & (IData)(
+                                                           (vlSelf->fsqrt__DOT__mul_reg 
+                                                            >> 0x15U)))));
+    if ((0x1000000U & fsqrt__DOT__result_inner)) {
+        vlSelf->fsqrt__DOT__exp_final = (0xffU & ((IData)(1U) 
+                                                  + (IData)(vlSelf->fsqrt__DOT__exp_final_reg)));
+        vlSelf->fsqrt__DOT__mant_final = (0x7fffffU 
+                                          & (fsqrt__DOT__result_inner 
+                                             >> 1U));
+    } else if ((0x800000U & fsqrt__DOT__result_inner)) {
+        vlSelf->fsqrt__DOT__exp_final = vlSelf->fsqrt__DOT__exp_final_reg;
         vlSelf->fsqrt__DOT__mant_final = (0x7fffffU 
                                           & fsqrt__DOT__result_inner);
     } else {
-        vlSelf->fsqrt__DOT__exp_final = vlSelf->fsqrt__DOT__exp_reg_minus;
+        vlSelf->fsqrt__DOT__exp_final = (0xffU & ((IData)(vlSelf->fsqrt__DOT__exp_final_reg) 
+                                                  - (IData)(1U)));
         vlSelf->fsqrt__DOT__mant_final = (0x7ffffeU 
                                           & (fsqrt__DOT__result_inner 
                                              << 1U));
     }
 }
 
-VL_ATTR_COLD void Vfsqrt_3___024root___eval_stl(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD void Vfsqrt___024root___eval_stl(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___eval_stl\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___eval_stl\n"); );
     // Body
     if ((1ULL & vlSelf->__VstlTriggered.word(0U))) {
-        Vfsqrt_3___024root___stl_sequent__TOP__0(vlSelf);
+        Vfsqrt___024root___stl_sequent__TOP__0(vlSelf);
     }
 }
 
-VL_ATTR_COLD void Vfsqrt_3___024root___eval_triggers__stl(Vfsqrt_3___024root* vlSelf);
+VL_ATTR_COLD void Vfsqrt___024root___eval_triggers__stl(Vfsqrt___024root* vlSelf);
 
-VL_ATTR_COLD bool Vfsqrt_3___024root___eval_phase__stl(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD bool Vfsqrt___024root___eval_phase__stl(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___eval_phase__stl\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___eval_phase__stl\n"); );
     // Init
     CData/*0:0*/ __VstlExecute;
     // Body
-    Vfsqrt_3___024root___eval_triggers__stl(vlSelf);
+    Vfsqrt___024root___eval_triggers__stl(vlSelf);
     __VstlExecute = vlSelf->__VstlTriggered.any();
     if (__VstlExecute) {
-        Vfsqrt_3___024root___eval_stl(vlSelf);
+        Vfsqrt___024root___eval_stl(vlSelf);
     }
     return (__VstlExecute);
 }
 
 #ifdef VL_DEBUG
-VL_ATTR_COLD void Vfsqrt_3___024root___dump_triggers__act(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD void Vfsqrt___024root___dump_triggers__act(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___dump_triggers__act\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___dump_triggers__act\n"); );
     // Body
     if ((1U & (~ (IData)(vlSelf->__VactTriggered.any())))) {
         VL_DBG_MSGF("         No triggers active\n");
@@ -190,10 +193,10 @@ VL_ATTR_COLD void Vfsqrt_3___024root___dump_triggers__act(Vfsqrt_3___024root* vl
 #endif  // VL_DEBUG
 
 #ifdef VL_DEBUG
-VL_ATTR_COLD void Vfsqrt_3___024root___dump_triggers__nba(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD void Vfsqrt___024root___dump_triggers__nba(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___dump_triggers__nba\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___dump_triggers__nba\n"); );
     // Body
     if ((1U & (~ (IData)(vlSelf->__VnbaTriggered.any())))) {
         VL_DBG_MSGF("         No triggers active\n");
@@ -207,10 +210,10 @@ VL_ATTR_COLD void Vfsqrt_3___024root___dump_triggers__nba(Vfsqrt_3___024root* vl
 }
 #endif  // VL_DEBUG
 
-VL_ATTR_COLD void Vfsqrt_3___024root___ctor_var_reset(Vfsqrt_3___024root* vlSelf) {
+VL_ATTR_COLD void Vfsqrt___024root___ctor_var_reset(Vfsqrt___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
-    Vfsqrt_3__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt_3___024root___ctor_var_reset\n"); );
+    Vfsqrt__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vfsqrt___024root___ctor_var_reset\n"); );
     // Body
     vlSelf->clk = VL_RAND_RESET_I(1);
     vlSelf->rst_n = VL_RAND_RESET_I(1);
@@ -224,7 +227,7 @@ VL_ATTR_COLD void Vfsqrt_3___024root___ctor_var_reset(Vfsqrt_3___024root* vlSelf
     for (int __Vi0 = 0; __Vi0 < 1024; ++__Vi0) {
         vlSelf->fsqrt__DOT__lut_sq[__Vi0] = VL_RAND_RESET_I(24);
     }
-    vlSelf->fsqrt__DOT__valid_reg = VL_RAND_RESET_I(3);
+    vlSelf->fsqrt__DOT__valid_reg = VL_RAND_RESET_I(4);
     vlSelf->fsqrt__DOT__is_zero_reg = VL_RAND_RESET_I(3);
     vlSelf->fsqrt__DOT__is_abnormal_reg = VL_RAND_RESET_I(3);
     vlSelf->fsqrt__DOT__exp_out = VL_RAND_RESET_I(8);
@@ -235,10 +238,12 @@ VL_ATTR_COLD void Vfsqrt_3___024root___ctor_var_reset(Vfsqrt_3___024root* vlSelf
     vlSelf->fsqrt__DOT__double_x1 = VL_RAND_RESET_I(24);
     vlSelf->fsqrt__DOT__a_x0_reg = VL_RAND_RESET_I(24);
     vlSelf->fsqrt__DOT__exp_reg = VL_RAND_RESET_I(8);
-    vlSelf->fsqrt__DOT__exp_reg_minus = VL_RAND_RESET_I(8);
     vlSelf->fsqrt__DOT__sign_reg = VL_RAND_RESET_I(1);
+    vlSelf->fsqrt__DOT__mul_reg = VL_RAND_RESET_Q(48);
     vlSelf->fsqrt__DOT__exp_final = VL_RAND_RESET_I(8);
     vlSelf->fsqrt__DOT__mant_final = VL_RAND_RESET_I(23);
+    vlSelf->fsqrt__DOT__exp_final_reg = VL_RAND_RESET_I(8);
+    vlSelf->fsqrt__DOT__sign_final_reg = VL_RAND_RESET_I(1);
     vlSelf->__Vtrigprevexpr___TOP__clk__0 = VL_RAND_RESET_I(1);
     vlSelf->__Vtrigprevexpr___TOP__rst_n__0 = VL_RAND_RESET_I(1);
 }

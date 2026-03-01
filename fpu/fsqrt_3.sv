@@ -100,6 +100,8 @@ end
 
 logic [23:0] a_x0_reg;
 logic [7:0] exp_reg;
+logic [7:0] exp_reg_plus;
+logic [7:0] exp_reg_minus;
 logic sign_reg;
 
 always_ff @(posedge clk or negedge rst_n) begin
@@ -112,6 +114,8 @@ always_ff @(posedge clk or negedge rst_n) begin
     double_x1 <= 24'hC00000 - a_x0_x0; 
     a_x0_reg <= a_x0;
     exp_reg <= exp_out;
+    exp_reg_plus <= exp_out + 8'd1;
+    exp_reg_minus <= exp_out - 8'd1;
     sign_reg <= sign_out;
   end
 end
@@ -127,13 +131,13 @@ always_comb begin
   result_inner = mul_reg[46:22] + mul_reg[21];
 
   if (result_inner[24]) begin
-    exp_final = exp_reg + 8'd1;
+    exp_final = exp_reg_plus;
     mant_final = result_inner[23:1];
   end else if (result_inner[23]) begin
     exp_final = exp_reg;
     mant_final = result_inner[22:0];
   end else begin
-    exp_final = exp_reg - 8'd1;
+    exp_final = exp_reg_minus;
     mant_final = {result_inner[21:0], 1'b0};
   end       
 end
