@@ -25,9 +25,9 @@ module top (
     logic [31:0] input_addr;
     logic [31:0] output_data;    
 
-    logic readtrigger;
-    logic writetrigger;
-    logic req_rdy;
+    (* mark_debug = true *)logic readtrigger;
+    (* mark_debug = true *)logic writetrigger;
+    (* mark_debug = true *)logic req_rdy;
     
     logic cpu_clk; 
 
