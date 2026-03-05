@@ -19,6 +19,9 @@ module top (
     input logic clk,
     input logic reset_n,
 
+    input readtrigger;
+    input writetrigger;
+
     output logic [15:0] led
 );
 
@@ -26,8 +29,6 @@ module top (
     logic [31:0] input_addr;
     logic [31:0] output_data;    
 
-    (* mark_debug = "true" *) logic readtrigger;
-    (* mark_debug = "true" *) logic writetrigger;
     (* mark_debug = "true" *) logic req_rdy;
     
     logic cpu_clk; 

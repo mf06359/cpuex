@@ -99,7 +99,7 @@ module cache (
     logic write_rise_reg;
     logic [1:0] oldest_way;
     
-    assign req_rdy = req_rdy_reg;
+    assign req_rdy = (state == IDLE && (read_rise || write_rise)) ? 1'b0 : req_rdy_reg;
 
     always_ff @(posedge clk) begin
         if (!reset_n) begin
