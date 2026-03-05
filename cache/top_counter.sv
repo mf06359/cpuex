@@ -19,9 +19,7 @@ module top (
     input logic clk,
     input logic reset_n,
 
-    output logic [31:0] output_monitor 
-    // Nexys A7の実機LEDで見たい場合は以下を追加してください
-    // , output logic [15:0] led
+    output logic [15:0] led
 );
 
     logic [31:0] input_data;
@@ -38,8 +36,6 @@ module top (
     /*
      * ここにコアを追加する形で利用するとよいと思う
      */
-
-    assign output_monitor = output_data;
 
     // =========================================================
     // キャッシュ ミスペナルティ測定用 ハードウェアカウンタ
@@ -72,7 +68,7 @@ module top (
     end
 
     // 実機のLEDに直結して表示させたい場合は、moduleのポートに led を追加して以下のコメントアウトを外します
-    // assign led = last_miss_penalty[15:0];
+    assign led = last_miss_penalty[15:0];
     // =========================================================
 
     cachecontroller cachecontroller_inst (
