@@ -180,7 +180,8 @@ module cache (
                                 2'b11: output_data_reg <= cache_data_reg[0][127:96];
                             endcase
                             plru_bits[index_reg] <= {2'b11, plru_bits[index_reg][0]};
-                            state <= DONE;
+                        req_rdy_reg <= 1'b1;
+                        state <= IDLE;
                         end else if (valid_bit_reg[1] && (cache_tag_reg[1] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: output_data_reg <= cache_data_reg[1][31:0];
@@ -189,7 +190,8 @@ module cache (
                                 2'b11: output_data_reg <= cache_data_reg[1][127:96];
                             endcase
                             plru_bits[index_reg] <= {2'b10, plru_bits[index_reg][0]};
-                            state <= DONE;
+                        req_rdy_reg <= 1'b1;
+                        state <= IDLE;
                         end else if (valid_bit_reg[2] && (cache_tag_reg[2] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: output_data_reg <= cache_data_reg[2][31:0];
@@ -198,7 +200,8 @@ module cache (
                                 2'b11: output_data_reg <= cache_data_reg[2][127:96];
                             endcase
                             plru_bits[index_reg] <= {1'b0, plru_bits[index_reg][1], 1'b1};
-                            state <= DONE;
+                        req_rdy_reg <= 1'b1;
+                        state <= IDLE;
                         end else if (valid_bit_reg[3] && (cache_tag_reg[3] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: output_data_reg <= cache_data_reg[3][31:0];
@@ -207,7 +210,8 @@ module cache (
                                 2'b11: output_data_reg <= cache_data_reg[3][127:96];
                             endcase
                             plru_bits[index_reg] <= {1'b0, plru_bits[index_reg][1], 1'b0};
-                            state <= DONE;
+                        req_rdy_reg <= 1'b1;
+                        state <= IDLE;
                         end else begin // not implemented yet : MISS
                             if (valid_bit_reg[oldest_way] && dirty_bit_reg[oldest_way]) begin
                                 // Write Back
@@ -240,7 +244,8 @@ module cache (
                             dirty_bits[index_reg][0] <= 1'b1;
                             output_data_reg <= 32'b0;
                             plru_bits[index_reg] <= {2'b11, plru_bits[index_reg][0]};
-                            state <= DONE;
+                        req_rdy_reg <= 1'b1;
+                        state <= IDLE;
                         end else if (valid_bit_reg[1] && (cache_tag_reg[1] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: cache_memory_w1[index_reg] <= {cache_data_reg[1][127:32], input_data_reg};
@@ -252,7 +257,8 @@ module cache (
                             dirty_bits[index_reg][1] <= 1'b1;
                             output_data_reg <= 32'b0;
                             plru_bits[index_reg] <= {2'b10, plru_bits[index_reg][0]};
-                            state <= DONE;
+                        req_rdy_reg <= 1'b1;
+                        state <= IDLE;
                         end else if (valid_bit_reg[2] && (cache_tag_reg[2] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: cache_memory_w2[index_reg] <= {cache_data_reg[2][127:32], input_data_reg};
@@ -264,7 +270,8 @@ module cache (
                             dirty_bits[index_reg][2] <= 1'b1;
                             output_data_reg <= 32'b0;
                             plru_bits[index_reg] <= {1'b0, plru_bits[index_reg][1], 1'b1};  
-                            state <= DONE;
+                        req_rdy_reg <= 1'b1;
+                        state <= IDLE;
                         end else if (valid_bit_reg[3] && (cache_tag_reg[3] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: cache_memory_w3[index_reg] <= {cache_data_reg[3][127:32], input_data_reg};
@@ -276,7 +283,8 @@ module cache (
                             dirty_bits[index_reg][3] <= 1'b1;
                             output_data_reg <= 32'b0;
                             plru_bits[index_reg] <= {1'b0, plru_bits[index_reg][1],1'b0};  
-                            state <= DONE;
+                        req_rdy_reg <= 1'b1;
+                        state <= IDLE;
                         end else begin // not implemented yet : MISS
                             if (valid_bit_reg[oldest_way] && dirty_bit_reg[oldest_way]) begin
                                 // Write Back
@@ -375,7 +383,8 @@ module cache (
                                                  oldest_way == 1 ? {2'b10, plru_bits[index_reg][0]} :
                                                  oldest_way == 2 ? {1'b0, plru_bits[index_reg][1], 1'b1} : 
                                                  {1'b0, plru_bits[index_reg][1], 1'b0};
-                        state <= DONE;
+                        req_rdy_reg <= 1'b1;
+                        state <= IDLE;
                     end
                 end
 
@@ -406,14 +415,9 @@ module cache (
                                                  oldest_way == 1 ? {2'b10, plru_bits[index_reg][0]} :
                                                  oldest_way == 2 ? {1'b0, plru_bits[index_reg][1], 1'b1} : 
                                                  {1'b0, plru_bits[index_reg][1], 1'b0};
-                        state <= DONE;
+                        req_rdy_reg <= 1'b1;
+                        state <= IDLE;
                     end
-                end
-
-                DONE: begin
-                    fifo.req_en <= 1'b0;
-                    req_rdy_reg <= 1'b1;
-                    state <= IDLE;
                 end
             endcase
         end
