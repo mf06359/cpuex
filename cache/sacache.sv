@@ -85,7 +85,7 @@ module cache (
     localparam WAIT_READ_RSP_FOR_READ = 5'b10000;
     localparam DONE = 5'b11111;
 
-    (* mark_debug = true *)logic [4:0] state = IDLE;
+    (* mark_debug = "true" *)logic [4:0] state = IDLE;
 
     logic [31:0] input_addr_reg;
     logic [31:0] input_data_reg;
