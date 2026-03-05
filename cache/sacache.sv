@@ -16,16 +16,17 @@ module cache (
     localparam DATA_WIDTH = 32;
     localparam BYTE_WIDTH = 8;
     localparam WORD_SIZE = 4; 
-    localparam CACHE_DEPTH = 128;
-    localparam TAG_WIDTH = 21;
-    localparam INDEX_WIDTH = 7;
+    localparam CACHE_DEPTH = 256; //128;
+    localparam LINE_SIZE = 128;
+    localparam TAG_WIDTH = 20;
+    localparam INDEX_WIDTH = 8;
     localparam OFFSET_WIDTH = 4;
     localparam NUM_WAYS = 4;
 
-    (* ram_style = "block" *) reg [127:0] cache_memory_w0 [CACHE_DEPTH-1:0];
-    (* ram_style = "block" *) reg [127:0] cache_memory_w1 [CACHE_DEPTH-1:0];
-    (* ram_style = "block" *) reg [127:0] cache_memory_w2 [CACHE_DEPTH-1:0];
-    (* ram_style = "block" *) reg [127:0] cache_memory_w3 [CACHE_DEPTH-1:0];
+    (* ram_style = "block" *) reg [LINE_SIZE-1:0] cache_memory_w0 [CACHE_DEPTH-1:0];
+    (* ram_style = "block" *) reg [LINE_SIZE-1:0] cache_memory_w1 [CACHE_DEPTH-1:0];
+    (* ram_style = "block" *) reg [LINE_SIZE-1:0] cache_memory_w2 [CACHE_DEPTH-1:0];
+    (* ram_style = "block" *) reg [LINE_SIZE-1:0] cache_memory_w3 [CACHE_DEPTH-1:0];
     (* ram_style = "block" *) reg [TAG_WIDTH-1:0] cache_tag_w0 [CACHE_DEPTH-1:0];
     (* ram_style = "block" *) reg [TAG_WIDTH-1:0] cache_tag_w1 [CACHE_DEPTH-1:0];
     (* ram_style = "block" *) reg [TAG_WIDTH-1:0] cache_tag_w2 [CACHE_DEPTH-1:0];
@@ -51,10 +52,10 @@ module cache (
             cache_memory_w1[i] = 128'b0;
             cache_memory_w2[i] = 128'b0;
             cache_memory_w3[i] = 128'b0;
-            cache_tag_w0[i] = 21'b0;
-            cache_tag_w1[i] = 21'b0;
-            cache_tag_w2[i] = 21'b0;
-            cache_tag_w3[i] = 21'b0;
+            cache_tag_w0[i] = 20'b0;
+            cache_tag_w1[i] = 20'b0;
+            cache_tag_w2[i] = 20'b0;
+            cache_tag_w3[i] = 20'b0;
         end
         for (int i = 0; i < CACHE_DEPTH; i++) begin
             for (int j = 0; j < NUM_WAYS; j++) begin
@@ -124,45 +125,45 @@ module cache (
                         fifo.req_en <= 1'b0;
                         req_rdy_reg <= 1'b0;
 
-                        tag_reg <= input_addr[31:11];
-                        index_reg <= input_addr[10:4];
+                        tag_reg <= input_addr[31:12];
+                        index_reg <= input_addr[11:4];
                         offset_reg <= input_addr[3:0];
                         
                         input_addr_reg <= input_addr;
                         input_data_reg <= input_data;
 
-                        cache_tag_reg[0] <= cache_tag_w0[input_addr[10:4]];
-                        cache_tag_reg[1] <= cache_tag_w1[input_addr[10:4]];
-                        cache_tag_reg[2] <= cache_tag_w2[input_addr[10:4]];
-                        cache_tag_reg[3] <= cache_tag_w3[input_addr[10:4]];
+                        cache_tag_reg[0] <= cache_tag_w0[input_addr[11:4]];
+                        cache_tag_reg[1] <= cache_tag_w1[input_addr[11:4]];
+                        cache_tag_reg[2] <= cache_tag_w2[input_addr[11:4]];
+                        cache_tag_reg[3] <= cache_tag_w3[input_addr[11:4]];
 
-                        cache_data_reg[0] <= cache_memory_w0[input_addr[10:4]];
-                        cache_data_reg[1] <= cache_memory_w1[input_addr[10:4]]; 
-                        cache_data_reg[2] <= cache_memory_w2[input_addr[10:4]];  
-                        cache_data_reg[3] <= cache_memory_w3[input_addr[10:4]]; 
+                        cache_data_reg[0] <= cache_memory_w0[input_addr[11:4]];
+                        cache_data_reg[1] <= cache_memory_w1[input_addr[11:4]]; 
+                        cache_data_reg[2] <= cache_memory_w2[input_addr[11:4]];  
+                        cache_data_reg[3] <= cache_memory_w3[input_addr[11:4]]; 
 
-                        dirty_bit_reg[0] <= dirty_bits[input_addr[10:4]][0];
-                        dirty_bit_reg[1] <= dirty_bits[input_addr[10:4]][1];
-                        dirty_bit_reg[2] <= dirty_bits[input_addr[10:4]][2];
-                        dirty_bit_reg[3] <= dirty_bits[input_addr[10:4]][3];
+                        dirty_bit_reg[0] <= dirty_bits[input_addr[11:4]][0];
+                        dirty_bit_reg[1] <= dirty_bits[input_addr[11:4]][1];
+                        dirty_bit_reg[2] <= dirty_bits[input_addr[11:4]][2];
+                        dirty_bit_reg[3] <= dirty_bits[input_addr[11:4]][3];
 
-                        valid_bit_reg[0] <= valid_bits[input_addr[10:4]][0];
-                        valid_bit_reg[1] <= valid_bits[input_addr[10:4]][1];
-                        valid_bit_reg[2] <= valid_bits[input_addr[10:4]][2];
-                        valid_bit_reg[3] <= valid_bits[input_addr[10:4]][3];
+                        valid_bit_reg[0] <= valid_bits[input_addr[11:4]][0];
+                        valid_bit_reg[1] <= valid_bits[input_addr[11:4]][1];
+                        valid_bit_reg[2] <= valid_bits[input_addr[11:4]][2];
+                        valid_bit_reg[3] <= valid_bits[input_addr[11:4]][3];
 
-                        if (!valid_bits[input_addr[10:4]][0]) begin
+                        if (!valid_bits[input_addr[11:4]][0]) begin
                             oldest_way <= 2'd0;
-                        end else if (!valid_bits[input_addr[10:4]][1]) begin
+                        end else if (!valid_bits[input_addr[11:4]][1]) begin
                             oldest_way <= 2'd1;
-                        end else if (!valid_bits[input_addr[10:4]][2]) begin
+                        end else if (!valid_bits[input_addr[11:4]][2]) begin
                             oldest_way <= 2'd2;
-                        end else if (!valid_bits[input_addr[10:4]][3]) begin
+                        end else if (!valid_bits[input_addr[11:4]][3]) begin
                             oldest_way <= 2'd3;
                         end else begin
-                            oldest_way <= plru_bits[input_addr[10:4]][2] ? 
-                                        (plru_bits[input_addr[10:4]][0] ? 2'd3 : 2'd2) : 
-                                        (plru_bits[input_addr[10:4]][1] ? 2'd1 : 2'd0);
+                            oldest_way <= plru_bits[input_addr[11:4]][2] ? 
+                                        (plru_bits[input_addr[11:4]][0] ? 2'd3 : 2'd2) : 
+                                        (plru_bits[input_addr[11:4]][1] ? 2'd1 : 2'd0);
                         end
 
                         state <= COMPI;
