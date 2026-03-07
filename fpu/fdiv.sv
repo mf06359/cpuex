@@ -30,159 +30,153 @@ module fdiv (
     wire a_is_zero = input_a[30:0] == 0;
     wire b_is_zero = input_b[30:0] == 0;
 
-    reg [47:0] lut [0:4095]; 
+    (* ram_style = "block" *)reg [47:0] lut [0:4095]; 
     initial begin
         $readmemh("taylor_lut.mem", lut);
     end
 
     // ================================================================
-    // Stage 1: Parsing, Pre-Shift, Parallel Exponent Calculation
+    // Stage 1: Parsing, Pre-Shift, Base Exponent Calculation
     // ================================================================
-    reg st1_valid, st1_sign, st1_nan, st1_inf, st1_zero;
+    reg st1_valid, st1_sign, st1_nan;
     reg [24:0] st1_adjusted_a;
     reg [10:0] st1_m_b_10_0;
     reg [47:0] st1_y0_dy;
     reg [48:0] st1_bias;
-    reg st1_shift_pred;
 
-    reg [7:0] st1_exp_p1, st1_exp_0, st1_exp_m1, st1_exp_m2;
-    reg st1_ovf_p1, st1_ovf_0, st1_ovf_m1, st1_ovf_m2;
-    reg st1_udf_p1, st1_udf_0, st1_udf_m1, st1_udf_m2;
+    // 3パターンに絞り込んだレジスタ
+    reg [7:0] st1_exp_C, st1_exp_N, st1_exp_S;
+    reg st1_inf_C, st1_inf_N, st1_inf_S;
+    reg st1_zero_C, st1_zero_N, st1_zero_S;
 
-    // シフト予測とAの調整（Stage 1のレジスタに格納するまでのパス）
     wire shift_pred = (m_a >= m_b);
     wire [24:0] adjusted_a = shift_pred ? {1'b0, m_a} : {m_a, 1'b0};
 
-    // ★ WNS改善: shift_pred に依存しない純粋な指数差を求め、全パターンの比較を並列実行
+    // ★ WNS改善: shift_pred の依存関係をStage 1の時点で全て吸収する
     wire signed [10:0] raw_exp = {3'b0, calc_e_a} - {3'b0, calc_e_b} + 11'sd127;
+    wire signed [10:0] base_exp = shift_pred ? raw_exp : raw_exp - 11'sd1;
     
-    wire signed [10:0] exp_p1 = raw_exp + 11'sd1;
-    wire signed [10:0] exp_0  = raw_exp;
-    wire signed [10:0] exp_m1 = raw_exp - 11'sd1;
-    wire signed [10:0] exp_m2 = raw_exp - 11'sd2;
+    wire signed [10:0] exp_C = base_exp + 11'sd1; // Carry発生時
+    wire signed [10:0] exp_N = base_exp;          // 通常時 (Norm)
+    wire signed [10:0] exp_S = base_exp - 11'sd1; // 誤差で小さくなった時 (Subnorm)
+
+    wire ovf_C = (exp_C >= 11'sd255); wire udf_C = (exp_C <= 11'sd0);
+    wire ovf_N = (exp_N >= 11'sd255); wire udf_N = (exp_N <= 11'sd0);
+    wire ovf_S = (exp_S >= 11'sd255); wire udf_S = (exp_S <= 11'sd0);
+
+    wire is_nan = a_is_nan || b_is_nan || (a_is_zero && b_is_zero) || (a_is_inf && b_is_inf);
+    wire is_inf = a_is_inf || b_is_zero;
+    wire is_zero = a_is_zero || b_is_inf;
+
+    always @(posedge clk) begin
+        st1_y0_dy <= lut[m_b[22:11]]; // m_bの上位12ビットをインデックスに
+    end
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            st1_valid <= 1'b0; st1_sign <= 1'b0;
-            st1_nan <= 1'b0; st1_inf <= 1'b0; st1_zero <= 1'b0;
+            st1_valid <= 1'b0; st1_sign <= 1'b0; st1_nan <= 1'b0;
             st1_adjusted_a <= 25'b0; st1_m_b_10_0 <= 11'b0;
-            st1_y0_dy <= 48'b0; st1_bias <= 49'b0;
-            st1_shift_pred <= 1'b0;
+            st1_bias <= 49'b0;
             
-            st1_exp_p1 <= 8'b0; st1_exp_0 <= 8'b0; st1_exp_m1 <= 8'b0; st1_exp_m2 <= 8'b0;
-            st1_ovf_p1 <= 1'b0; st1_ovf_0 <= 1'b0; st1_ovf_m1 <= 1'b0; st1_ovf_m2 <= 1'b0;
-            st1_udf_p1 <= 1'b0; st1_udf_0 <= 1'b0; st1_udf_m1 <= 1'b0; st1_udf_m2 <= 1'b0;
+            st1_exp_C <= 8'b0; st1_exp_N <= 8'b0; st1_exp_S <= 8'b0;
+            st1_inf_C <= 1'b0; st1_inf_N <= 1'b0; st1_inf_S <= 1'b0;
+            st1_zero_C <= 1'b0; st1_zero_N <= 1'b0; st1_zero_S <= 1'b0;
         end else begin
             st1_valid <= input_valid;
             st1_sign <= s_a ^ s_b;
+            st1_nan <= is_nan;
 
             st1_adjusted_a <= adjusted_a;
-            st1_shift_pred <= shift_pred;
             st1_m_b_10_0 <= m_b[10:0];
-            st1_y0_dy <= lut[m_b[22:11]];
 
-            // ★ バグ修正: テイラー近似の負の誤差をカバーするため、バイアスを大幅に増量する
             st1_bias <= (m_b[22:0] == 23'b0) ? 49'h0 : 49'h0_0000_017F_FFFF;
 
-            // 11bitの比較器をStage 1で完全に並列化して吸収
-            st1_exp_p1 <= exp_p1[7:0]; st1_ovf_p1 <= (exp_p1 >= 11'sd255); st1_udf_p1 <= (exp_p1 <= 11'sd0);
-            st1_exp_0  <= exp_0[7:0];  st1_ovf_0  <= (exp_0  >= 11'sd255); st1_udf_0  <= (exp_0  <= 11'sd0);
-            st1_exp_m1 <= exp_m1[7:0]; st1_ovf_m1 <= (exp_m1 >= 11'sd255); st1_udf_m1 <= (exp_m1 <= 11'sd0);
-            st1_exp_m2 <= exp_m2[7:0]; st1_ovf_m2 <= (exp_m2 >= 11'sd255); st1_udf_m2 <= (exp_m2 <= 11'sd0);
+            st1_exp_C <= exp_C[7:0];
+            st1_exp_N <= exp_N[7:0];
+            st1_exp_S <= exp_S[7:0];
 
-            if (a_is_nan || b_is_nan || (a_is_zero && b_is_zero) || (a_is_inf && b_is_inf)) begin
-                st1_nan <= 1'b1; st1_inf <= 1'b0; st1_zero <= 1'b0;
-            end else if (a_is_inf || b_is_zero) begin
-                st1_nan <= 1'b0; st1_inf <= 1'b1; st1_zero <= 1'b0;
-            end else if (a_is_zero || b_is_inf) begin
-                st1_nan <= 1'b0; st1_inf <= 1'b0; st1_zero <= 1'b1;
-            end else begin
-                st1_nan <= 1'b0; st1_inf <= 1'b0; st1_zero <= 1'b0;
-            end
+            // 例外フラグの統合(OR)もStage 1で済ませておく
+            st1_inf_C <= (is_inf && !is_nan) || ovf_C;
+            st1_inf_N <= (is_inf && !is_nan) || ovf_N;
+            st1_inf_S <= (is_inf && !is_nan) || ovf_S;
+
+            st1_zero_C <= (is_zero && !is_nan) || udf_C;
+            st1_zero_N <= (is_zero && !is_nan) || udf_N;
+            st1_zero_S <= (is_zero && !is_nan) || udf_S;
         end
     end
-
-    // ================================================================
+// ================================================================
     // Stage 2: Taylor Expansion (DSP P = C - A * B)
     // ================================================================
-    reg st2_valid, st2_sign, st2_nan, st2_inf, st2_zero;
+    reg st2_valid, st2_sign, st2_nan;
     reg [24:0] st2_adjusted_a;
     reg [23:0] st2_x1;
     reg [48:0] st2_bias;
-    reg st2_shift_pred;
 
-    reg [7:0] st2_exp_p1, st2_exp_0, st2_exp_m1, st2_exp_m2;
-    reg st2_ovf_p1, st2_ovf_0, st2_ovf_m1, st2_ovf_m2;
-    reg st2_udf_p1, st2_udf_0, st2_udf_m1, st2_udf_m2;
+    reg [7:0] st2_exp_C, st2_exp_N, st2_exp_S;
+    reg st2_inf_C, st2_inf_N, st2_inf_S;
+    reg st2_zero_C, st2_zero_N, st2_zero_S;
 
+    // ★ WNS改善: BRAM出力からの 24x11 乗算と減算を明確に分離し、
+    // DSPブロック1つで (C - A*B) が推論されやすくする
     wire [47:0] stage2_C = {1'b0, st1_y0_dy[47:24], 23'b0}; 
-    wire [47:0] stage2_P = stage2_C - (st1_y0_dy[23:0] * st1_m_b_10_0);
+    wire [34:0] mult2    = st1_y0_dy[23:0] * st1_m_b_10_0; // 24x11bit (DSPスライス1つに収まる)
+    wire [47:0] stage2_P = stage2_C - mult2;               // ポスト加減算器で処理される
     wire [23:0] x1_taylor = stage2_P[46:23];
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            st2_valid <= 1'b0; st2_sign <= 1'b0; 
-            st2_nan <= 1'b0; st2_inf <= 1'b0; st2_zero <= 1'b0;
+            st2_valid <= 1'b0;
+            st2_sign <= 1'b0; st2_nan <= 1'b0; 
             st2_adjusted_a <= 25'b0; st2_x1 <= 24'b0; st2_bias <= 49'b0;
-            st2_shift_pred <= 1'b0;
             
-            st2_exp_p1 <= 8'b0; st2_exp_0 <= 8'b0; st2_exp_m1 <= 8'b0; st2_exp_m2 <= 8'b0;
-            st2_ovf_p1 <= 1'b0; st2_ovf_0 <= 1'b0; st2_ovf_m1 <= 1'b0; st2_ovf_m2 <= 1'b0;
-            st2_udf_p1 <= 1'b0; st2_udf_0 <= 1'b0; st2_udf_m1 <= 1'b0; st2_udf_m2 <= 1'b0;
+            st2_exp_C <= 8'b0;
+            st2_exp_N <= 8'b0; st2_exp_S <= 8'b0;
+            st2_inf_C <= 1'b0; st2_inf_N <= 1'b0; st2_inf_S <= 1'b0;
+            st2_zero_C <= 1'b0;
+            st2_zero_N <= 1'b0; st2_zero_S <= 1'b0;
         end else begin
             st2_valid <= st1_valid;
             st2_sign <= st1_sign; 
-            st2_nan <= st1_nan; st2_inf <= st1_inf; st2_zero <= st1_zero;
+            st2_nan <= st1_nan; 
 
             st2_adjusted_a <= st1_adjusted_a;
             st2_x1 <= x1_taylor;
             st2_bias <= st1_bias;
-            st2_shift_pred <= st1_shift_pred;
             
-            st2_exp_p1 <= st1_exp_p1; st2_ovf_p1 <= st1_ovf_p1; st2_udf_p1 <= st1_udf_p1;
-            st2_exp_0  <= st1_exp_0;  st2_ovf_0  <= st1_ovf_0;  st2_udf_0  <= st1_udf_0;
-            st2_exp_m1 <= st1_exp_m1; st2_ovf_m1 <= st1_ovf_m1; st2_udf_m1 <= st1_udf_m1;
-            st2_exp_m2 <= st1_exp_m2; st2_ovf_m2 <= st1_ovf_m2; st2_udf_m2 <= st1_udf_m2;
+            st2_exp_C <= st1_exp_C;
+            st2_exp_N <= st1_exp_N; st2_exp_S <= st1_exp_S;
+            st2_inf_C <= st1_inf_C; st2_inf_N <= st1_inf_N; st2_inf_S <= st1_inf_S;
+            st2_zero_C <= st1_zero_C;
+            st2_zero_N <= st1_zero_N; st2_zero_S <= st1_zero_S;
         end
     end
 
+// ================================================================
+    // Stage 3: Final Calculation (DSP Multiply-Add + Single Stage MUX)
     // ================================================================
-    // Stage 3: Final Calculation (DSP Multiply-Add + Output MUX)
-    // ================================================================
-    wire [48:0] q_final = (st2_adjusted_a * st2_x1) + st2_bias;
+    
+    // ★ WNS改善: 25bit x 24bit 乗算を、DSPスライス(25x18)に収まるように
+    // 17bitと7bitに明示的に分割して計算させる
+    wire [41:0] mult3_lo = st2_adjusted_a * st2_x1[16:0];  // 25 x 17bit
+    wire [31:0] mult3_hi = st2_adjusted_a * st2_x1[23:17]; // 25 x 7bit
+    
+    // 分割した乗算結果とバイアスを合算する
+    wire [48:0] q_final  = {mult3_hi, 17'b0} + mult3_lo + st2_bias;
 
-    wire carry = q_final[47]; // 丸めでちょうど 2.0 に押し上げられた時のみ 1
-    wire norm  = q_final[46]; // 通常は 1。テイラー近似の負誤差で 0.999... になった時のみ 0
+    wire carry = q_final[47]; 
+    wire norm  = q_final[46]; 
 
-    // ★ バグ修正: もし 0.999... になった場合は、フラクションの抽出位置をずらして正規化を補う
     wire [22:0] final_fraction = carry ? q_final[46:24] :
                                  norm  ? q_final[45:23] :
                                          q_final[44:22];
 
-    // 0: p1, 1: 0, 2: m1, 3: m2
-    wire [1:0] sel = st2_shift_pred ? 
-                        (carry ? 2'd0 : (norm ? 2'd1 : 2'd2)) :
-                        (carry ? 2'd1 : (norm ? 2'd2 : 2'd3));
+    wire [7:0] final_exp = carry ? st2_exp_C :
+                           norm  ? st2_exp_N :
+                                   st2_exp_S;
 
-    // 加算器を使わず、純粋なMUXだけで指数とフラグを選択
-    wire [7:0] final_exp = (sel == 2'd0) ? st2_exp_p1 :
-                           (sel == 2'd1) ? st2_exp_0 :
-                           (sel == 2'd2) ? st2_exp_m1 :
-                                           st2_exp_m2;
-
-    wire ovf = (sel == 2'd0) ? st2_ovf_p1 :
-               (sel == 2'd1) ? st2_ovf_0 :
-               (sel == 2'd2) ? st2_ovf_m1 :
-                               st2_ovf_m2;
-
-    wire udf = (sel == 2'd0) ? st2_udf_p1 :
-               (sel == 2'd1) ? st2_udf_0 :
-               (sel == 2'd2) ? st2_udf_m1 :
-                               st2_udf_m2;
-
-    wire out_is_nan  = st2_nan;
-    wire out_is_inf  = st2_inf  || ovf;
-    wire out_is_zero = st2_zero || udf;
+    wire out_is_inf  = carry ? st2_inf_C : (norm ? st2_inf_N : st2_inf_S);
+    wire out_is_zero = carry ? st2_zero_C : (norm ? st2_zero_N : st2_zero_S);
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -190,9 +184,8 @@ module fdiv (
             out_valid <= 1'b0;
         end else begin
             out_valid <= st2_valid;
-            
             if (st2_valid) begin
-                if (out_is_nan) begin
+                if (st2_nan) begin
                     result <= QUIET_NAN;
                 end else if (out_is_inf) begin
                     result <= {st2_sign, 8'hFF, 23'b0};
@@ -206,3 +199,4 @@ module fdiv (
     end
 
 endmodule
+`default_nettype wire
