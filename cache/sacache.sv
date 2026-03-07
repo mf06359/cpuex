@@ -85,7 +85,7 @@ module cache (
     localparam WAIT_READ_RSP_FOR_READ = 5'b10000;
     localparam DONE = 5'b11111;
 
-    (* mark_debug = "true" *)logic [4:0] state = IDLE;
+    logic [4:0] state = IDLE;
 
     logic [31:0] input_addr_reg;
     logic [31:0] input_data_reg;
@@ -99,7 +99,7 @@ module cache (
     logic write_rise_reg;
     logic [1:0] oldest_way;
     
-    assign req_rdy = (state == IDLE && (read_rise || write_rise)) ? 1'b0 : req_rdy_reg;
+    assign req_rdy = req_rdy_reg;
 
     always_ff @(posedge clk) begin
         if (!reset_n) begin
@@ -180,8 +180,7 @@ module cache (
                                 2'b11: output_data_reg <= cache_data_reg[0][127:96];
                             endcase
                             plru_bits[index_reg] <= {2'b11, plru_bits[index_reg][0]};
-                        req_rdy_reg <= 1'b1;
-                        state <= IDLE;
+                            state <= DONE;
                         end else if (valid_bit_reg[1] && (cache_tag_reg[1] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: output_data_reg <= cache_data_reg[1][31:0];
@@ -190,8 +189,7 @@ module cache (
                                 2'b11: output_data_reg <= cache_data_reg[1][127:96];
                             endcase
                             plru_bits[index_reg] <= {2'b10, plru_bits[index_reg][0]};
-                        req_rdy_reg <= 1'b1;
-                        state <= IDLE;
+                            state <= DONE;
                         end else if (valid_bit_reg[2] && (cache_tag_reg[2] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: output_data_reg <= cache_data_reg[2][31:0];
@@ -200,8 +198,7 @@ module cache (
                                 2'b11: output_data_reg <= cache_data_reg[2][127:96];
                             endcase
                             plru_bits[index_reg] <= {1'b0, plru_bits[index_reg][1], 1'b1};
-                        req_rdy_reg <= 1'b1;
-                        state <= IDLE;
+                            state <= DONE;
                         end else if (valid_bit_reg[3] && (cache_tag_reg[3] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: output_data_reg <= cache_data_reg[3][31:0];
@@ -210,8 +207,7 @@ module cache (
                                 2'b11: output_data_reg <= cache_data_reg[3][127:96];
                             endcase
                             plru_bits[index_reg] <= {1'b0, plru_bits[index_reg][1], 1'b0};
-                        req_rdy_reg <= 1'b1;
-                        state <= IDLE;
+                            state <= DONE;
                         end else begin // not implemented yet : MISS
                             if (valid_bit_reg[oldest_way] && dirty_bit_reg[oldest_way]) begin
                                 // Write Back
@@ -244,8 +240,7 @@ module cache (
                             dirty_bits[index_reg][0] <= 1'b1;
                             output_data_reg <= 32'b0;
                             plru_bits[index_reg] <= {2'b11, plru_bits[index_reg][0]};
-                        req_rdy_reg <= 1'b1;
-                        state <= IDLE;
+                            state <= DONE;
                         end else if (valid_bit_reg[1] && (cache_tag_reg[1] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: cache_memory_w1[index_reg] <= {cache_data_reg[1][127:32], input_data_reg};
@@ -257,8 +252,7 @@ module cache (
                             dirty_bits[index_reg][1] <= 1'b1;
                             output_data_reg <= 32'b0;
                             plru_bits[index_reg] <= {2'b10, plru_bits[index_reg][0]};
-                        req_rdy_reg <= 1'b1;
-                        state <= IDLE;
+                            state <= DONE;
                         end else if (valid_bit_reg[2] && (cache_tag_reg[2] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: cache_memory_w2[index_reg] <= {cache_data_reg[2][127:32], input_data_reg};
@@ -270,8 +264,7 @@ module cache (
                             dirty_bits[index_reg][2] <= 1'b1;
                             output_data_reg <= 32'b0;
                             plru_bits[index_reg] <= {1'b0, plru_bits[index_reg][1], 1'b1};  
-                        req_rdy_reg <= 1'b1;
-                        state <= IDLE;
+                            state <= DONE;
                         end else if (valid_bit_reg[3] && (cache_tag_reg[3] == tag_reg)) begin // HIT
                             case (offset_reg[3:2])
                                 2'b00: cache_memory_w3[index_reg] <= {cache_data_reg[3][127:32], input_data_reg};
@@ -283,8 +276,7 @@ module cache (
                             dirty_bits[index_reg][3] <= 1'b1;
                             output_data_reg <= 32'b0;
                             plru_bits[index_reg] <= {1'b0, plru_bits[index_reg][1],1'b0};  
-                        req_rdy_reg <= 1'b1;
-                        state <= IDLE;
+                            state <= DONE;
                         end else begin // not implemented yet : MISS
                             if (valid_bit_reg[oldest_way] && dirty_bit_reg[oldest_way]) begin
                                 // Write Back
@@ -383,8 +375,7 @@ module cache (
                                                  oldest_way == 1 ? {2'b10, plru_bits[index_reg][0]} :
                                                  oldest_way == 2 ? {1'b0, plru_bits[index_reg][1], 1'b1} : 
                                                  {1'b0, plru_bits[index_reg][1], 1'b0};
-                        req_rdy_reg <= 1'b1;
-                        state <= IDLE;
+                        state <= DONE;
                     end
                 end
 
@@ -415,9 +406,14 @@ module cache (
                                                  oldest_way == 1 ? {2'b10, plru_bits[index_reg][0]} :
                                                  oldest_way == 2 ? {1'b0, plru_bits[index_reg][1], 1'b1} : 
                                                  {1'b0, plru_bits[index_reg][1], 1'b0};
-                        req_rdy_reg <= 1'b1;
-                        state <= IDLE;
+                        state <= DONE;
                     end
+                end
+
+                DONE: begin
+                    fifo.req_en <= 1'b0;
+                    req_rdy_reg <= 1'b1;
+                    state <= IDLE;
                 end
             endcase
         end

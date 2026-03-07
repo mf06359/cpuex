@@ -34,22 +34,28 @@ fadd:
 # 2. fdiv_10 (tb_fdiv_10.cpp)
 # サブモジュールとして fdiv_mantissa_10.sv を使用
 # ------------------------------------------
-fdiv:
+fdiv_10:
 	@echo "Building fdiv_10..."
 	$(VERILATOR) $(VFLAGS) fdiv_10.sv fdiv_mantissa_10.sv tb_fdiv_10.cpp \
 		--top-module fdiv --prefix Vfdiv -o tb_fdiv_10
 	@echo "Running tb_fdiv_10..."
 	./obj_dir/tb_fdiv_10
 
+fdiv:
+	@echo "Building fdiv..."
+	$(VERILATOR) $(VFLAGS) fdiv.sv test_fdiv.cpp \
+		--top-module fdiv --prefix Vfdiv -o test_fdiv
+	@echo "Running test_fdiv..."
+	./obj_dir/test_fdiv
 # ------------------------------------------
 # 3. fmul (tb_fmul.cpp)
 # ------------------------------------------
 fmul:
 	@echo "Building fmul..."
-	$(VERILATOR) $(VFLAGS) fmul.sv tb_fmul.cpp \
-		--top-module fmul --prefix Vfmul -o tb_fmul
-	@echo "Running tb_fmul..."
-	./obj_dir/tb_fmul
+	$(VERILATOR) $(VFLAGS) fmul.sv test_fmul.cpp \
+		--top-module fmul --prefix Vfmul -o test_fmul
+	@echo "Running test_fmul..."
+	./obj_dir/test_fmul
 
 # ------------------------------------------
 # 4. fsqrt_10 (test_sqrt.cpp)
@@ -72,7 +78,7 @@ fsqrt_3:
 # ------------------------------------------
 itof:
 	@echo "Building itof..."
-	$(VERILATOR) $(VFLAGS) $(THREAD_FLAGS) itof_without_fadd.sv test_itof.cpp \
+	$(VERILATOR) $(VFLAGS) $(THREAD_FLAGS) itof.sv test_itof.cpp \
 		--top-module itof --prefix Vitof -o test_itof
 	@echo "Running test_itof..."
 	./obj_dir/test_itof

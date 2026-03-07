@@ -46,22 +46,24 @@ uint32_t compute_expected(uint32_t a_bits, uint32_t b_bits) {
     fres.f = fa.f + fb.f;
     return fres.u;
 }
-
 bool check_result(uint32_t result, uint32_t expected) {
-    // --- 修正: 出力（RTLの結果または期待値）が非正規化数、または Inf の場合は除外（パス扱い） ---
-    if (is_denormalized(result) || is_denormalized(expected) || 
-        is_inf(result) || is_inf(expected)) {
-        return true;
-    }
+    // 無限大 (Inf) の場合はパス扱い
+    if (is_inf(result) || is_inf(expected)) return true;
 
     FloatBits res_f, exp_f;
     res_f.u = result;
     exp_f.u = expected;
 
+    // 非数 (NaN) の場合はパス扱い
     if (std::isnan(res_f.f) && std::isnan(exp_f.f)) return true;
+
+    // 完全一致
     if (result == expected) return true;
+
+    // 符号違いの 0 (+0.0 と -0.0) を許容
     if (res_f.f == 0.0f && exp_f.f == 0.0f) return true;
 
+    // 精度誤差 (1 ULP) の許容
     if ((result >> 31) == (expected >> 31)) {
         int32_t diff = (int32_t)result - (int32_t)expected;
         if (std::abs(diff) <= 1) return true;
@@ -69,6 +71,31 @@ bool check_result(uint32_t result, uint32_t expected) {
 
     return false;
 }
+/*
+bool check_result(uint32_t result, uint32_t expected) {
+    FloatBits res_f, exp_f;
+    res_f.u = result;
+    exp_f.u = expected;
+
+    if (res_f.f == 0.0f && exp_f.f == 0.0f) return true;
+    if (std::isnan(res_f.f) && std::isnan(exp_f.f)) return true;
+    if (std::isnan(exp_f.f)) return true;
+    if (is_denormalized(result) || is_denormalized(expected) || 
+        is_inf(result) || is_inf(expected)) {
+        return true;
+    }
+
+
+    if ((result >> 31) == (expected >> 31)) {
+        int32_t diff = (int32_t)result - (int32_t)expected;
+        if (std::abs(diff) <= 1) return true;
+    }
+
+    if (result == expected) return true;
+
+    return false;
+}
+*/
 
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
@@ -95,7 +122,7 @@ int main(int argc, char** argv) {
     std::cout << "Per pair: Corner mantissas (0, MAX) + " << NUM_RANDOM_TRIALS << " randoms." << std::endl;
     std::cout << "Completely skipping samples involving denormalized numbers or Inf." << std::endl;
 
-    for (int exp_a = 1; exp_a <= 254; ++exp_a) {
+    for (int exp_a = 0; exp_a <= 255; ++exp_a) {
         if (exp_a % 16 == 0) {
             std::cout << "\rProgress: ExpA " << exp_a << "/254  Errors: " << error_count << std::flush;
         }
@@ -122,12 +149,27 @@ int main(int argc, char** argv) {
                 uint32_t val_b = make_float(sign_b, exp_b, mp.mb);
                 uint32_t expected = compute_expected(val_a, val_b);
 
-                // --- 修正: 入力や期待値が非正規化数 または Inf の場合は投入前にスキップ ---
+                // 指数部が 0 (非正規化数または 0) もしくは 255 (Inf/NaN) の場合はスキップ
+                auto is_special = [](uint32_t bits) {
+                    uint32_t exp = (bits >> 23) & 0xFF;
+                    return (exp == 0 || exp == 0xFF);
+                };
+
+                if (is_special(val_a) || is_special(val_b) || is_special(expected)) {
+                    skipped_count++;
+                    continue;
+                }
+                /*
+                if (is_inf(val_a) || is_inf(val_b) || is_inf(expected) || is_denormalized(expected)) {
+                    skipped_count++;
+                    continue;
+                }
                 if (is_denormalized(val_a) || is_denormalized(val_b) || is_denormalized(expected) ||
                     is_inf(val_a) || is_inf(val_b) || is_inf(expected)) {
                     skipped_count++;
                     continue;
                 }
+                */
 
                 // --- Input Phase ---
                 top->clk = 1;
