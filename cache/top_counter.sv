@@ -27,12 +27,13 @@ module top (
     logic [31:0] input_addr;
     logic [31:0] output_data;    
 
-    logic readtrigger;
-    logic writetrigger;
+    reg readtrigger;
+    reg readtrigger_cache;
+    reg writetrigger;
     logic req_rdy;
     
     logic cpu_clk; 
-    assign cpu_clk = clk;
+    // assign cpu_clk = clk;
 
     // =========================================================
     // 自動テストシーケンサー (Miss & Hit 連続測定)
@@ -81,6 +82,7 @@ module top (
                     if (req_rdy) begin
                         input_addr <= 32'h0000_1000; // 測定用アドレス
                         readtrigger <= 1'b1;
+                        readtrigger_cache <= 1'b1;
                         current_counter <= 0;
                         test_state <= WAIT_MISS;
                     end
@@ -88,6 +90,7 @@ module top (
                 
                 WAIT_MISS: begin
                     readtrigger <= 1'b0; // トリガーを1サイクルで落とす
+                    readtrigger_cache <= 1'b0; // トリガーを1サイクルで落とす
                     
                     // 待機中（req_rdy=0）はカウントアップ
                     if (!req_rdy || readtrigger) begin
@@ -159,12 +162,12 @@ module top (
         .reset_n(reset_n),
         
         .writetrigger(writetrigger),
-        .readtrigger(readtrigger),
+        .readtrigger(readtrigger_cache),
         .input_addr(input_addr),
         .input_data(input_data),
         .req_rdy(req_rdy),
         .output_data(output_data),
-        .cpu_clk_out() 
+        .cpu_clk_out(cpu_clk) 
     );
 
 endmodule

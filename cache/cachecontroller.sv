@@ -41,6 +41,13 @@ module cachecontroller (
 
     assign cpu_clk_out = cpu_clk; 
 
+    // cachecontroller.sv 内に追加
+    logic readtrigger_cc_sync;
+    always_ff @(posedge cpu_clk) begin
+        readtrigger_cc_sync <= readtrigger;
+    end
+    
+
     // interfaces
     master_fifo master_fifo ();
     slave_fifo slave_fifo ();
@@ -60,7 +67,7 @@ module cachecontroller (
         .clk(cpu_clk),
         .input_data(input_data),
         .input_addr(input_addr),
-        .readtrigger(readtrigger),
+        .readtrigger(readtrigger_cc_sync),
         .writetrigger(writetrigger),
         .reset_n(reset_n),
         .req_rdy(req_rdy),

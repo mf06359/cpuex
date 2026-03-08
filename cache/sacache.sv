@@ -175,14 +175,28 @@ module cache (
     localparam WAIT_BETWEEN_REQS_FOR_WRITE = 5'b11001;
     localparam DONE = 5'b11111;
 
-    (* extract_enable = "no" *) reg [4:0] state = IDLE;
+    (* fsm_encoding = "one_hot", extract_enable = "no" *) reg [4:0] state = IDLE;
     logic [31:0] input_addr_reg;
     logic read_req_reg;
     logic write_req_reg;
 
     reg readtrigger_sync;
-    always @(posedge clk) begin
-        readtrigger_sync <= readtrigger; // ここで1クロック消費してタイミングの余裕を作る
+    reg writetrigger_sync;
+    reg [31:0] input_addr_sync;
+    reg [31:0] input_data_sync;
+
+    always_ff @(posedge clk) begin
+        if (!reset_n) begin
+            readtrigger_sync  <= 1'b0;
+            writetrigger_sync <= 1'b0;
+            input_addr_sync   <= 32'b0;
+            input_data_sync   <= 32'b0;
+        end else begin
+            readtrigger_sync  <= readtrigger;
+            writetrigger_sync <= writetrigger;
+            input_addr_sync   <= input_addr;
+            input_data_sync   <= input_data;
+        end
     end
 
     // --- パイプラインレジスタ (CALC_HIT から COMPI へ渡す) ---
@@ -196,7 +210,7 @@ module cache (
     logic victim_valid_reg;
     logic [2:0] next_plru_reg;
 
-    assign req_rdy = (state == DONE) || (state == IDLE && !readtrigger && !writetrigger);
+    assign req_rdy = (state == DONE) || (state == IDLE && !readtrigger_sync && !writetrigger_sync);
 
     always_ff @(posedge clk) begin
         if (!reset_n) begin
@@ -217,24 +231,24 @@ module cache (
         end else begin
             case (state)
                 IDLE: begin
-                    if (readtrigger_sync || writetrigger) begin
+                    if (readtrigger_sync || writetrigger_sync) begin
+                     
                         read_req_reg  <= readtrigger_sync;
-                        write_req_reg <= writetrigger;
+                        write_req_reg <= writetrigger_sync;
                         
                         fifo.req_en <= 1'b0;
 
-                        tag_reg <= input_addr[31:12];
-                        index_reg <= input_addr[11:4];
-                        offset_reg <= input_addr[3:0];
+                        tag_reg <= input_addr_sync[31:12];
+                        index_reg <= input_addr_sync[11:4];
+                        offset_reg <= input_addr_sync[3:0];
                         
-                        input_addr_reg <= input_addr;
-                        input_data_reg <= input_data;
+                        input_addr_reg <= input_addr_sync;
+                        input_data_reg <= input_data_sync;
                         
-                        state <= READ_MEM; 
+                        state <= READ_MEM;
                     end
                 end
 
-                // [パイプライン段1]: メモリ読み出し
                 READ_MEM: begin
                     cache_tag_reg[0] <= cache_tag_w0[index_reg];
                     cache_tag_reg[1] <= cache_tag_w1[index_reg];
