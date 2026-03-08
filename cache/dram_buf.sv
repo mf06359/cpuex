@@ -1,6 +1,8 @@
+// dram_buf.sv
 module dram_buf (
     master_fifo.fifo master,
-    slave_fifo.fifo slave
+    slave_fifo.fifo slave,
+    input logic rst
 );
     // WARNING: FIFO generators are set to the first-word fall-through (FWFT) mode
 
@@ -14,7 +16,8 @@ module dram_buf (
         .rd_en(slave.req_rdy),
         .dout(slave.req),
         .full(req_full),
-        .empty(req_empty)
+        .empty(req_empty),
+        .rst(rst)
     );
     assign master.req_rdy = !req_full;
     assign slave.req_en = !req_empty;
@@ -29,7 +32,8 @@ module dram_buf (
         .rd_en(master.rsp_rdy),
         .dout(master.rsp),
         .full(rsp_full),
-        .empty(rsp_empty)
+        .empty(rsp_empty),
+        .rst(rst)
     );
     assign slave.rsp_rdy = !rsp_full;
     assign master.rsp_en = !rsp_empty;

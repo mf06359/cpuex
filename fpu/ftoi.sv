@@ -14,7 +14,6 @@ module ftoi (
     logic [31:0] s1_abs_int;
     logic        s1_ovf;
 
-    // 【修正】: expとfracの宣言と切り出しを always_ff の外（組み合わせ回路）で行う
     logic [7:0]  exp;
     logic [22:0] frac;
     assign exp  = in_f[30:23];
@@ -30,15 +29,12 @@ module ftoi (
             s1_valid <= input_valid;
             s1_sign  <= in_f[31];
 
-            // 外で定義した exp と frac をそのまま使用する
             if (exp < 8'd127) begin
                 s1_abs_int <= 32'b0;
-                // Underflow, result is zero
                 s1_ovf     <= 1'b0;
             end else if (exp >= 8'd158) begin
                 if (in_f[31] && exp == 8'd158 && frac == 23'd0) begin
                     s1_abs_int <= 32'h80000000;
-                    // Overflow, set to min int
                     s1_ovf     <= 1'b0;
                 end else begin
                     s1_abs_int <= 32'b0;
@@ -61,9 +57,9 @@ module ftoi (
         end else begin
             out_valid <= s1_valid;
             if (s1_ovf) begin
-                out_i <= s1_sign ? 32'h80000000 : 32'h7FFFFFFF; // Saturate on overflow
+                out_i <= s1_sign ? 32'h80000000 : 32'h7FFFFFFF; // overflow
             end else begin
-                out_i <= s1_sign ? (~s1_abs_int + 1) : s1_abs_int; // Apply sign
+                out_i <= s1_sign ? (~s1_abs_int + 1) : s1_abs_int; // sign
             end
         end
     end

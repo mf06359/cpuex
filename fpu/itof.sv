@@ -9,9 +9,6 @@ module itof (
     output      logic        out_valid
 );
 
-    // -------------------------------------------------------------------------
-    // Stage 1: 絶対値と符号の取得
-    // -------------------------------------------------------------------------
     logic [31:0] s1_abs_i;
     logic        s1_sign;
     logic        s1_valid;
@@ -24,14 +21,10 @@ module itof (
         end else begin
             s1_valid <= input_valid;
             s1_sign  <= in_i[31];
-            // 負の数の場合は2の補数をとって絶対値にする
             s1_abs_i <= in_i[31] ? (~in_i + 32'd1) : in_i;
         end
     end
 
-    // -------------------------------------------------------------------------
-    // Stage 2: Leading Zero Count (LZC) の計算
-    // -------------------------------------------------------------------------
     function automatic logic [4:0] lzc32(input logic [31:0] v);
         if (v[31]) return 5'd0;  if (v[30]) return 5'd1;  if (v[29]) return 5'd2;  if (v[28]) return 5'd3;
         if (v[27]) return 5'd4;  if (v[26]) return 5'd5;  if (v[25]) return 5'd6;  if (v[24]) return 5'd7;
@@ -63,9 +56,6 @@ module itof (
         end
     end
 
-    // -------------------------------------------------------------------------
-    // Stage 3: シフト、指数部計算、丸め処理 (組み合わせ回路で構成)
-    // -------------------------------------------------------------------------
     logic [7:0]  next_exp;
     logic [22:0] next_frac;
     logic [31:0] shifted_mant;
@@ -87,10 +77,8 @@ module itof (
             round  = shifted_mant[6];
             sticky = (shifted_mant[5:0] != 6'b0);
             lsb    = shifted_mant[8];
-            
-            // 丸め処理 (Round to nearest, ties to even)
+
             if (guard && (round || sticky || lsb)) begin
-                // 丸めにより桁上がりが発生した場合、expのインクリメントも同時に行う
                 {next_exp, next_frac} = {temp_exp, shifted_mant[30:8]} + 24'd1;
             end else begin
                 next_exp  = temp_exp;
@@ -99,9 +87,6 @@ module itof (
         end
     end
 
-    // -------------------------------------------------------------------------
-    // 最終出力レジスタ
-    // -------------------------------------------------------------------------
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             out_f     <= 32'b0;

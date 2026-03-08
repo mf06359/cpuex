@@ -11,11 +11,11 @@ module fmul (
 
     logic        s1_sign_a, s1_sign_b;
     logic [7:0]  s1_exp_a, s1_exp_b;
-    logic [23:0] s1_mant_a, s1_mant_b; // 1.Frac (24bit)
+    logic [23:0] s1_mant_a, s1_mant_b; 
     
     logic        c1_sign_res;
-    logic [9:0]  c1_exp_temp; // Overflow/Underflow判定用に広めに取る
-    logic [47:0] c1_mant_prod; // 24*24=48bit
+    logic [9:0]  c1_exp_temp; 
+    logic [47:0] c1_mant_prod; 
     logic        c1_is_zero_or_sub;
 
     always_comb begin
@@ -35,7 +35,6 @@ module fmul (
         c1_mant_prod = s1_mant_a * s1_mant_b;
     end
 
-    // --- Stage 1 Registers ---
     logic        s1_sign_reg;
     logic [9:0]  s1_exp_reg;
     logic [47:0] s1_prod_reg;
@@ -58,10 +57,9 @@ module fmul (
         end
     end
 
-    // logic [47:0] c2_prod_shifted;
     logic [9:0]  c2_exp_adjusted;
     logic        c2_sticky;
-    logic [26:0] c2_mant_norm; // Rounding用: {1, Frac(23), G, R, S, ...}
+    logic [26:0] c2_mant_norm;
 
     always_comb begin
         if (s1_prod_reg[47]) begin
@@ -75,7 +73,6 @@ module fmul (
         end
     end
 
-    // --- Stage 2 Registers ---
     logic        s2_sign_reg;
     logic [9:0]  s2_exp_reg;
     logic [26:0] s2_mant_reg;
@@ -108,19 +105,18 @@ module fmul (
         logic        guard, round, sticky, lsb;
         logic        round_up;
         logic [22:0] frac_final;
-        // logic [7:0]  exp_final;
-        logic [9:0]  exp_checked; // Overflow check
+        logic [9:0]  exp_checked; 
         
         guard  = s2_mant_reg[3];
         round  = s2_mant_reg[2];
         sticky = s2_sticky_reg | s2_mant_reg[1] | s2_mant_reg[0];
-        lsb    = s2_mant_reg[4]; // Fractionの最下位
+        lsb    = s2_mant_reg[4]; 
 
         round_up = guard & (round | sticky | lsb);
 
         if (round_up) begin
             frac_final = s2_mant_reg[26:4] + 1;
-            if (frac_final == 0) begin // 23bitあふれて0になった
+            if (frac_final == 0) begin 
                 exp_checked = s2_exp_reg + 1;
             end else begin
                 exp_checked = s2_exp_reg;
@@ -130,9 +126,9 @@ module fmul (
             exp_checked = s2_exp_reg;
         end
 
-        if (s2_zero_reg || exp_checked[9]) begin // Underflow (Negative exp)
+        if (s2_zero_reg || exp_checked[9]) begin 
             c3_result_comb = {s2_sign_reg, 31'b0};
-        end else if (exp_checked >= 255) begin // Overflow -> Inf
+        end else if (exp_checked >= 255) begin 
             c3_result_comb = {s2_sign_reg, 8'hFF, 23'b0};
         end else begin
             c3_result_comb = {s2_sign_reg, exp_checked[7:0], frac_final};

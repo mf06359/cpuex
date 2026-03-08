@@ -7,9 +7,10 @@
 #include <verilated.h>
 #include "Vfdiv.h"
 
-// 今回の fdiv.sv は3サイクルですが、パイプラインがはけるのを待つため余裕を持たせています
-const int ESTIMATED_LATENCY = 10; 
+const int ESTIMATED_LATENCY = 3; 
 const int NUM_RANDOM_TRIALS = 10000; 
+
+using namespace std;
 
 union FloatBits {
     float f;
@@ -26,7 +27,6 @@ uint32_t make_float(uint32_t sign, uint32_t exp, uint32_t mant) {
     return (sign << 31) | ((exp & 0xFF) << 23) | (mant & 0x7FFFFF);
 }
 
-// 例外判定ヘルパー関数
 bool is_denormalized(uint32_t bits) {
     uint32_t exp = (bits >> 23) & 0xFF;
     uint32_t mant = bits & 0x7FFFFF;
@@ -53,28 +53,20 @@ uint32_t compute_expected(uint32_t a_bits, uint32_t b_bits) {
     return fres.u;
 }
 
-// 判定ロジック: a, b の情報も受け取るように変更
 bool check_result(uint32_t result, uint32_t expected, uint32_t a, uint32_t b) {
     
-    // 例外1: NaN の場合 (0/0 や Inf/Inf など)
     if (is_nan(a) || is_nan(b) || is_nan(expected)) {
-        // fdiv.sv は QUIET_NAN として 32'h7FC0_0000 を出力する仕様
         return result == 0x7FC00000;
     }
 
-    // 例外2: Inf の場合 (ゼロ割りなど)
     if (is_inf(a) || is_inf(b) || is_inf(expected)) {
-        // 出力結果がInfであり、かつ符号ビットがC++の期待値と一致しているか
-        // return is_inf(result) && ((result >> 31) == (expected >> 31));
         return true;
     }
 
-    // 例外3: 非正規化数 (ハードウェアで未サポートのため無視してパスさせる)
     if (is_denormalized(a) || is_denormalized(b) || is_denormalized(expected) || is_denormalized(result)) {
         return true;
     }
-    
-    // それ以外の通常の浮動小数点数の比較
+
     FloatBits res_f, exp_f;
     res_f.u = result;
     exp_f.u = expected;
@@ -83,7 +75,6 @@ bool check_result(uint32_t result, uint32_t expected, uint32_t a, uint32_t b) {
     if (res_f.f == 0.0f && exp_f.f == 0.0f) return true;
 
     float diff = std::fabs(res_f.f - exp_f.f);
-    // 許容誤差の設定 (ニュートン法の精度を考慮)
     float epsilon = std::fmax(1e-6f, std::fabs(exp_f.f) * 1e-5f); 
     if (diff <= epsilon) return true;
 
@@ -106,12 +97,14 @@ int main(int argc, char** argv) {
     top->clk = 0;
     top->rst_n = 0;
     top->eval();
-    for(int i=0; i<5; i++) { top->clk=1; top->eval(); top->clk=0; top->eval(); }
+
+    for (int i = 0; i < 5; i++) {
+        top->clk = 1; top->eval();
+        top->clk = 0; top->eval();
+    }
     top->rst_n = 1;
 
-    std::cout << "Starting fdiv Test (Newton-Raphson 3-cycle)..." << std::endl;
-    std::cout << "Testing normal bounds, randoms, Inf, NaN exceptions." << std::endl;
-    std::cout << "Skipping strict checks for denormalized numbers only." << std::endl;
+    std::cout << "Starting fdiv Test" << std::endl;
 
     for (int exp_a = 1; exp_a <= 254; ++exp_a) {
         if (exp_a % 16 == 0) {
@@ -140,11 +133,11 @@ int main(int argc, char** argv) {
                 uint32_t val_b = make_float(sign_b, exp_b, mp.mb);
                 uint32_t expected = compute_expected(val_a, val_b);
 
-                // 以前はここでスキップしていましたが、今回はそのままハードウェアに流し込みます
                 if (is_nan(val_a) || is_nan(val_b) || is_inf(val_a) || is_inf(val_b)) {
                     exception_count++;
                 }
 
+                // set inputs
                 top->clk = 1; top->eval();
                 top->input_a = val_a;
                 top->input_b = val_b;
@@ -153,13 +146,14 @@ int main(int argc, char** argv) {
                 scoreboard.push_back({val_a, val_b, expected});
                 total_tests++;
 
-                top->clk = 0; top->eval();
+                // output 
+                top->clk = 0; 
+                top->eval();
+
                 if (top->out_valid) {
                     if (scoreboard.empty()) goto finish;
                     Transaction t = scoreboard.front();
                     scoreboard.pop_front();
-
-                    // 比較関数に val_a と val_b も渡す
                     if (!check_result(top->result, t.expected, t.a, t.b)) {
                         error_count++;
                         if (error_count <= 10) {
@@ -176,10 +170,10 @@ int main(int argc, char** argv) {
         }
     }
 
-    // パイプラインに残ったデータを掃き出す
     top->input_valid = 0;
-    for (int i = 0; i < ESTIMATED_LATENCY; ++i) {
-        top->clk = 1; top->eval(); top->clk = 0; top->eval();
+    for (int i = 0; i < ESTIMATED_LATENCY + 10; ++i) {
+        top->clk = 1; top->eval(); 
+        top->clk = 0; top->eval();
         if (top->out_valid && !scoreboard.empty()) {
             Transaction t = scoreboard.front();
             scoreboard.pop_front();
@@ -190,7 +184,6 @@ int main(int argc, char** argv) {
 finish:
     std::cout << "\n\nSimulation Finished." << std::endl;
     std::cout << "Total Valid Tests: " << total_tests << std::endl;
-    std::cout << "Exceptions Fed:    " << exception_count << std::endl;
     std::cout << "Errors:            " << error_count << std::endl;
 
     if (error_count == 0) std::cout << "PASSED" << std::endl;

@@ -98,11 +98,8 @@ always_comb begin
   a_x0 = (48'(a_fixed) * x_0) >> 24;
 end
 
-// ==========================================
-// --- Cycle 2 ---
-// ==========================================
 logic [23:0] a_x0_reg;
-logic signed [17:0] delta_reg; // 18bitに収まる1.0からの差分
+logic signed [17:0] delta_reg; 
 logic [7:0] exp_reg;
 logic [7:0] exp_reg_plus;
 logic [7:0] exp_reg_minus;
@@ -117,11 +114,8 @@ always_ff @(posedge clk or negedge rst_n) begin
     exp_reg_minus <= 8'b0;
     sign_reg <= 1'b0;
   end else begin
-    // double_x1 (1.5 - a_x0_x0) は約 1.0 (24'h800000) になります。
-    // 1.0 からの差分 delta = (24'hC00000 - a_x0_x0) - 24'h800000
-    //                    = 24'h400000 - a_x0_x0;
     logic [23:0] delta_24 = 24'h400000 - a_x0_x0;
-    delta_reg <= delta_24[17:0]; // 非常に小さい値のため下位18bitで完全な精度を保つ
+    delta_reg <= delta_24[17:0]; 
 
     a_x0_reg <= a_x0;
     exp_reg <= exp_out;
@@ -132,9 +126,6 @@ always_ff @(posedge clk or negedge rst_n) begin
 end
 
 
-// ==========================================
-// --- Cycle 3 ---
-// ==========================================
 logic signed [24:0] a_x0_signed;
 logic signed [42:0] delta_mult;
 logic [47:0] P_out;
@@ -143,22 +134,11 @@ logic [7:0] exp_final;
 logic [22:0] mant_final;
 
 always_comb begin
-  // a_x0_reg を 25bit の符号付き正の数として扱う (ゼロ拡張)
   a_x0_signed = {1'b0, a_x0_reg};
-
-  // 25bit * 18bit の符号付き乗算（DSP48E1 の乗算器に完全にフィット！）
   delta_mult = a_x0_signed * delta_reg;
-
-  // DSP内部の加算器 (C + A*B) にマップされる計算
-  // a_x0_reg * 24'h800000 は (a_x0_reg << 23) と等価。
-  // さらに元のコードの丸め用加算 (+ mul_reg[21] 相当の 48'h200000) もここで結線だけで足し込む。
-  // {1'b0, a_x0_reg, 1'b0, 1'b1, 21'b0} は (a_x0_reg << 23) + 48'h200000 とビットレベルで同一。
   P_out = {1'b0, a_x0_reg, 1'b0, 1'b1, 21'b0} + 48'($signed(delta_mult));
-
-  // 必要な24ビット (45ビット目から22ビット目) を切り出し
   result_inner = P_out[45:22];
 
-  // 指数部と仮数部の正規化（元のロジックのまま）
   if (result_inner[23]) begin
     exp_final = exp_reg;
     mant_final = result_inner[22:0];

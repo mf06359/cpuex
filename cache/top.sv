@@ -31,7 +31,7 @@ module top (
     
     logic cpu_clk; 
 
-    assign cpu_clk = clk; 
+    //assign cpu_clk = clk; 
 
     /*
      * ここにコアを追加する形で利用するとよいと思う

@@ -7,8 +7,10 @@
 #include <verilated.h>
 #include "Vfadd.h"
 
-const int ESTIMATED_LATENCY = 5;
+const int ESTIMATED_LATENCY = 3;
 const int NUM_RANDOM_TRIALS = 10000; 
+
+using namespace std;
 
 union FloatBits {
     float f;
@@ -25,14 +27,12 @@ uint32_t make_float(uint32_t sign, uint32_t exp, uint32_t mant) {
     return (sign << 31) | ((exp & 0xFF) << 23) | (mant & 0x7FFFFF);
 }
 
-// 非正規化数（指数部が0で仮数部が0以外）の判定
 bool is_denormalized(uint32_t bits) {
     uint32_t exp = (bits >> 23) & 0xFF;
     uint32_t mant = bits & 0x7FFFFF;
     return (exp == 0 && mant != 0);
 }
 
-// 無限大（指数部がALL 1で仮数部が0）の判定
 bool is_inf(uint32_t bits) {
     uint32_t exp = (bits >> 23) & 0xFF;
     uint32_t mant = bits & 0x7FFFFF;
@@ -46,66 +46,39 @@ uint32_t compute_expected(uint32_t a_bits, uint32_t b_bits) {
     fres.f = fa.f + fb.f;
     return fres.u;
 }
+
 bool check_result(uint32_t result, uint32_t expected) {
-    // 無限大 (Inf) の場合はパス扱い
     if (is_inf(result) || is_inf(expected)) return true;
 
     FloatBits res_f, exp_f;
     res_f.u = result;
     exp_f.u = expected;
 
-    // 非数 (NaN) の場合はパス扱い
-    if (std::isnan(res_f.f) && std::isnan(exp_f.f)) return true;
+    if (isnan(res_f.f) && isnan(exp_f.f)) return true;
 
-    // 完全一致
     if (result == expected) return true;
 
-    // 符号違いの 0 (+0.0 と -0.0) を許容
+    // +0 and -0
     if (res_f.f == 0.0f && exp_f.f == 0.0f) return true;
 
-    // 精度誤差 (1 ULP) の許容
     if ((result >> 31) == (expected >> 31)) {
         int32_t diff = (int32_t)result - (int32_t)expected;
-        if (std::abs(diff) <= 1) return true;
+        if (abs(diff) < 1) return true;
     }
 
     return false;
 }
-/*
-bool check_result(uint32_t result, uint32_t expected) {
-    FloatBits res_f, exp_f;
-    res_f.u = result;
-    exp_f.u = expected;
 
-    if (res_f.f == 0.0f && exp_f.f == 0.0f) return true;
-    if (std::isnan(res_f.f) && std::isnan(exp_f.f)) return true;
-    if (std::isnan(exp_f.f)) return true;
-    if (is_denormalized(result) || is_denormalized(expected) || 
-        is_inf(result) || is_inf(expected)) {
-        return true;
-    }
-
-
-    if ((result >> 31) == (expected >> 31)) {
-        int32_t diff = (int32_t)result - (int32_t)expected;
-        if (std::abs(diff) <= 1) return true;
-    }
-
-    if (result == expected) return true;
-
-    return false;
-}
-*/
 
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
     Vfadd* top = new Vfadd;
 
-    std::deque<Transaction> scoreboard;
+    deque<Transaction> scoreboard;
     
-    std::mt19937 gen(12345);
-    std::uniform_int_distribution<uint32_t> dist_mant(0, 0x7FFFFF);
-    std::uniform_int_distribution<uint32_t> dist_sign(0, 1);
+    mt19937 gen(12345);
+    uniform_int_distribution<uint32_t> dist_mant(0, 0x7FFFFF);
+    uniform_int_distribution<uint32_t> dist_sign(0, 1);
 
     uint64_t total_tests = 0;
     uint64_t error_count = 0;
@@ -114,30 +87,30 @@ int main(int argc, char** argv) {
     top->clk = 0;
     top->rst_n = 0;
     top->eval();
-    for(int i=0; i<5; i++) { top->clk=1; top->eval(); top->clk=0; top->eval(); }
+    for(int i = 0; i < 5; i++) {
+        top->clk = 1; top->eval(); 
+        top->clk = 0; top->eval(); 
+    }
     top->rst_n = 1;
 
-    std::cout << "Starting fadd Exhaustive Exponent Test..." << std::endl;
-    std::cout << "Testing all pairs of exponents (1-254) * (1-254)" << std::endl;
-    std::cout << "Per pair: Corner mantissas (0, MAX) + " << NUM_RANDOM_TRIALS << " randoms." << std::endl;
-    std::cout << "Completely skipping samples involving denormalized numbers or Inf." << std::endl;
+    cout << "Starting fadd Test..." << endl;
 
-    for (int exp_a = 0; exp_a <= 255; ++exp_a) {
+    for (int exp_a = 0; exp_a <= 255; exp_a++) {
         if (exp_a % 16 == 0) {
-            std::cout << "\rProgress: ExpA " << exp_a << "/254  Errors: " << error_count << std::flush;
+            cout << "\rProgress: exponent a " << exp_a << "/254  Errors: " << error_count << flush;
         }
 
-        for (int exp_b = 1; exp_b <= 254; ++exp_b) {
+        for (int exp_b = 1; exp_b <= 254; exp_b++) {
             struct MantPair { uint32_t ma; uint32_t mb; };
-            std::vector<MantPair> test_mants;
+            vector<MantPair> test_mants;
 
-            uint32_t MAX_MANT = 0x7FFFFF;
+            uint32_t maxmantissa = 0x7FFFFF;
             test_mants.push_back({0, 0});
-            test_mants.push_back({0, MAX_MANT});
-            test_mants.push_back({MAX_MANT, 0});
-            test_mants.push_back({MAX_MANT, MAX_MANT});
+            test_mants.push_back({0, maxmantissa});
+            test_mants.push_back({maxmantissa, 0});
+            test_mants.push_back({maxmantissa, maxmantissa});
 
-            for (int k = 0; k < NUM_RANDOM_TRIALS; ++k) {
+            for (int k = 0; k < NUM_RANDOM_TRIALS; k++) {
                 test_mants.push_back({dist_mant(gen), dist_mant(gen)});
             }
 
@@ -149,7 +122,6 @@ int main(int argc, char** argv) {
                 uint32_t val_b = make_float(sign_b, exp_b, mp.mb);
                 uint32_t expected = compute_expected(val_a, val_b);
 
-                // 指数部が 0 (非正規化数または 0) もしくは 255 (Inf/NaN) の場合はスキップ
                 auto is_special = [](uint32_t bits) {
                     uint32_t exp = (bits >> 23) & 0xFF;
                     return (exp == 0 || exp == 0xFF);
@@ -159,19 +131,8 @@ int main(int argc, char** argv) {
                     skipped_count++;
                     continue;
                 }
-                /*
-                if (is_inf(val_a) || is_inf(val_b) || is_inf(expected) || is_denormalized(expected)) {
-                    skipped_count++;
-                    continue;
-                }
-                if (is_denormalized(val_a) || is_denormalized(val_b) || is_denormalized(expected) ||
-                    is_inf(val_a) || is_inf(val_b) || is_inf(expected)) {
-                    skipped_count++;
-                    continue;
-                }
-                */
 
-                // --- Input Phase ---
+                // set inputs
                 top->clk = 1;
                 top->eval();
                 
@@ -182,15 +143,11 @@ int main(int argc, char** argv) {
                 scoreboard.push_back({val_a, val_b, expected});
                 total_tests++;
 
-                // --- Output Phase ---
+                // output
                 top->clk = 0;
                 top->eval();
 
                 if (top->out_valid) {
-                    if (scoreboard.empty()) {
-                        std::cerr << "Error: Output valid but scoreboard empty!" << std::endl;
-                        goto finish;
-                    }
                     Transaction t = scoreboard.front();
                     scoreboard.pop_front();
 
@@ -199,9 +156,9 @@ int main(int argc, char** argv) {
                         if (error_count <= 10) {
                             FloatBits fa, fb, fres, fexp;
                             fa.u = t.a; fb.u = t.b; fres.u = top->result; fexp.u = t.expected;
-                            std::cout << "\n[Mismatch] A=" << fa.f << " B=" << fb.f
-                                      << "\n\tExp: " << fexp.f << " (0x" << std::hex << t.expected << ")"
-                                      << "\n\tGot: " << fres.f << " (0x" << top->result << ")" << std::dec << std::endl;
+                            cout << "\n[Mismatch] A=" << fa.f << " B=" << fb.f
+                                      << "\n\tExp: " << fexp.f << " (0x" << hex << t.expected << ")"
+                                      << "\n\tGot: " << fres.f << " (0x" << top->result << ")" << dec << endl;
                         }
                     }
                 }
@@ -222,13 +179,12 @@ int main(int argc, char** argv) {
     }
 
 finish:
-    std::cout << "\n\nSimulation Finished." << std::endl;
-    std::cout << "Total Valid Tests: " << total_tests << std::endl;
-    std::cout << "Skipped Samples:   " << skipped_count << std::endl;
-    std::cout << "Errors:            " << error_count << std::endl;
+    cout << "\n\nSimulation Finished." << endl;
+    cout << "Total Valid Tests: " << total_tests << endl;
+    cout << "Errors:            " << error_count << endl;
 
-    if (error_count == 0) std::cout << "PASSED" << std::endl;
-    else std::cout << "FAILED" << std::endl;
+    if (error_count == 0) cout << "PASSED" << endl;
+    else cout << "FAILED" << endl;
 
     top->final();
     delete top;

@@ -9,8 +9,8 @@
 #include <verilated.h>
 #include "Vitof.h" 
 
-// --- 設定 ---
-// パイプライン段数（itofの実装に合わせて変更してください）
+using namespace std;
+
 const int LATENCY = 2; 
 
 union FloatBits {
@@ -18,17 +18,13 @@ union FloatBits {
     uint32_t u;
 };
 
-// --- グローバル変数 ---
-std::atomic<uint64_t> g_total_checked(0);
-std::atomic<uint64_t> g_total_errors(0);
-std::mutex g_print_mutex;
+atomic<uint64_t> g_total_checked(0);
+atomic<uint64_t> g_total_errors(0);
+mutex g_print_mutex;
 
-// --- 期待値計算 ---
 uint32_t compute_expected(uint32_t input_bits) {
-    // 入力を符号付き整数として解釈
     int32_t in_val = (int32_t)input_bits;
     
-    // floatへキャスト (ここで丸めが発生する)
     float result_f = static_cast<float>(in_val);
     
     FloatBits res_val;
@@ -36,7 +32,6 @@ uint32_t compute_expected(uint32_t input_bits) {
     return res_val.u;
 }
 
-// --- ワーカースレッド ---
 void worker_thread(uint32_t start_addr, uint32_t end_addr, int thread_id) {
     Vitof* top = new Vitof;
     
@@ -44,7 +39,7 @@ void worker_thread(uint32_t start_addr, uint32_t end_addr, int thread_id) {
         uint32_t input;
         uint32_t expected;
     };
-    std::deque<Transaction> scoreboard;
+    deque<Transaction> scoreboard;
 
     top->clk = 0;
     top->rst_n = 0;
@@ -61,34 +56,30 @@ void worker_thread(uint32_t start_addr, uint32_t end_addr, int thread_id) {
         // Input
         top->clk = 1; top->eval();
         
-        // --- 修正箇所: ポート名を in_i に変更 ---
         top->in_i = input_val; 
         
         top->input_valid = 1;
 
         scoreboard.push_back({input_val, compute_expected(input_val)});
 
-        // Output check
         top->clk = 0; top->eval();
         if (top->out_valid) {
             if (scoreboard.empty()) break;
             Transaction t = scoreboard.front(); scoreboard.pop_front();
 
-            // --- 修正箇所: ポート名を out_f に変更 ---
             uint32_t res = top->out_f;
             uint32_t exp = t.expected;
 
-            // 1 ULP 許容 (丸めモードの違い対策)
             uint32_t diff = (res > exp) ? (res - exp) : (exp - res);
             
-            if (diff > 1) {
+            if (diff >= 1) {
                  local_errors++;
                  if (local_errors <= 3) {
-                    std::lock_guard<std::mutex> lock(g_print_mutex);
+                    lock_guard<mutex> lock(g_print_mutex);
                     FloatBits out_f, exp_f; out_f.u = res; exp_f.u = exp;
-                    std::cerr << "[itof Error] In: " << (int32_t)t.input 
-                              << " Exp: " << exp_f.f << " (0x" << std::hex << exp << ")"
-                              << " Got: " << out_f.f << " (0x" << res << ")" << std::dec << std::endl;
+                    cerr << "[itof Error] In: " << (int32_t)t.input 
+                              << " Exp: " << exp_f.f << " (0x" << hex << exp << ")"
+                              << " Got: " << out_f.f << " (0x" << res << ")" << dec << endl;
                  }
             }
             local_checked++;
@@ -100,14 +91,12 @@ void worker_thread(uint32_t start_addr, uint32_t end_addr, int thread_id) {
         }
     }
 
-    // Drain pipeline
     top->input_valid = 0;
     for (int k = 0; k < LATENCY + 5; k++) {
         top->clk = 1; top->eval(); top->clk = 0; top->eval();
         if (top->out_valid && !scoreboard.empty()) {
             Transaction t = scoreboard.front(); scoreboard.pop_front();
             
-            // --- 修正箇所: ポート名を out_f に変更 ---
             uint32_t res = top->out_f;
             uint32_t diff = (res > t.expected) ? (res - t.expected) : (t.expected - res);
             
@@ -124,13 +113,13 @@ void worker_thread(uint32_t start_addr, uint32_t end_addr, int thread_id) {
 
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
-    const uint64_t TOTAL_TESTS = 0xFFFFFFFFULL + 1; // 全32bit整数
-    unsigned int num_threads = std::thread::hardware_concurrency();
+    const uint64_t TOTAL_TESTS = 0xFFFFFFFFULL + 1; 
+    unsigned int num_threads = thread::hardware_concurrency();
     if (num_threads == 0) num_threads = 4;
 
-    std::cout << "Starting itof Exhaustive Test (" << num_threads << " threads)..." << std::endl;
+    cout << "Starting itof Exhaustive Test (" << num_threads << " threads)..." << endl;
 
-    std::vector<std::thread> threads;
+    vector<thread> threads;
     uint64_t range = TOTAL_TESTS / num_threads;
 
     for (unsigned int i = 0; i < num_threads; ++i) {
@@ -140,14 +129,14 @@ int main(int argc, char** argv) {
     }
 
     while(g_total_checked < TOTAL_TESTS) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        std::cout << "\rProgress: " << std::fixed << std::setprecision(1) 
-                  << (double)g_total_checked / TOTAL_TESTS * 100.0 << "% Errors: " << g_total_errors << std::flush;
+        this_thread::sleep_for(chrono::milliseconds(500));
+        cout << "\rProgress: " << fixed << setprecision(1) 
+                  << (double)g_total_checked / TOTAL_TESTS * 100.0 << "% Errors: " << g_total_errors << flush;
         if (g_total_errors > 1000) break; 
     }
     
     for (auto& t : threads) t.join();
     
-    std::cout << "\nFinished. Total Errors: " << g_total_errors << std::endl;
+    cout << "\nFinished. Total Errors: " << g_total_errors << endl;
     return 0;
 }

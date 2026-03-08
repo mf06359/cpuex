@@ -35,16 +35,12 @@ module fdiv (
         $readmemh("taylor_lut.mem", lut);
     end
 
-    // ================================================================
-    // Stage 1: Parsing, Pre-Shift, Base Exponent Calculation
-    // ================================================================
     reg st1_valid, st1_sign, st1_nan;
     reg [24:0] st1_adjusted_a;
     reg [10:0] st1_m_b_10_0;
     reg [47:0] st1_y0_dy;
     reg [48:0] st1_bias;
 
-    // 3パターンに絞り込んだレジスタ
     reg [7:0] st1_exp_C, st1_exp_N, st1_exp_S;
     reg st1_inf_C, st1_inf_N, st1_inf_S;
     reg st1_zero_C, st1_zero_N, st1_zero_S;
@@ -52,13 +48,12 @@ module fdiv (
     wire shift_pred = (m_a >= m_b);
     wire [24:0] adjusted_a = shift_pred ? {1'b0, m_a} : {m_a, 1'b0};
 
-    // ★ WNS改善: shift_pred の依存関係をStage 1の時点で全て吸収する
     wire signed [10:0] raw_exp = {3'b0, calc_e_a} - {3'b0, calc_e_b} + 11'sd127;
     wire signed [10:0] base_exp = shift_pred ? raw_exp : raw_exp - 11'sd1;
     
-    wire signed [10:0] exp_C = base_exp + 11'sd1; // Carry発生時
-    wire signed [10:0] exp_N = base_exp;          // 通常時 (Norm)
-    wire signed [10:0] exp_S = base_exp - 11'sd1; // 誤差で小さくなった時 (Subnorm)
+    wire signed [10:0] exp_C = base_exp + 11'sd1; 
+    wire signed [10:0] exp_N = base_exp;          
+    wire signed [10:0] exp_S = base_exp - 11'sd1; 
 
     wire ovf_C = (exp_C >= 11'sd255); wire udf_C = (exp_C <= 11'sd0);
     wire ovf_N = (exp_N >= 11'sd255); wire udf_N = (exp_N <= 11'sd0);
@@ -69,7 +64,7 @@ module fdiv (
     wire is_zero = a_is_zero || b_is_inf;
 
     always @(posedge clk) begin
-        st1_y0_dy <= lut[m_b[22:11]]; // m_bの上位12ビットをインデックスに
+        st1_y0_dy <= lut[m_b[22:11]]; 
     end
 
     always @(posedge clk or negedge rst_n) begin
@@ -95,7 +90,6 @@ module fdiv (
             st1_exp_N <= exp_N[7:0];
             st1_exp_S <= exp_S[7:0];
 
-            // 例外フラグの統合(OR)もStage 1で済ませておく
             st1_inf_C <= (is_inf && !is_nan) || ovf_C;
             st1_inf_N <= (is_inf && !is_nan) || ovf_N;
             st1_inf_S <= (is_inf && !is_nan) || ovf_S;
@@ -105,9 +99,7 @@ module fdiv (
             st1_zero_S <= (is_zero && !is_nan) || udf_S;
         end
     end
-// ================================================================
-    // Stage 2: Taylor Expansion (DSP P = C - A * B)
-    // ================================================================
+
     reg st2_valid, st2_sign, st2_nan;
     reg [24:0] st2_adjusted_a;
     reg [23:0] st2_x1;
@@ -117,11 +109,9 @@ module fdiv (
     reg st2_inf_C, st2_inf_N, st2_inf_S;
     reg st2_zero_C, st2_zero_N, st2_zero_S;
 
-    // ★ WNS改善: BRAM出力からの 24x11 乗算と減算を明確に分離し、
-    // DSPブロック1つで (C - A*B) が推論されやすくする
     wire [47:0] stage2_C = {1'b0, st1_y0_dy[47:24], 23'b0}; 
-    wire [34:0] mult2    = st1_y0_dy[23:0] * st1_m_b_10_0; // 24x11bit (DSPスライス1つに収まる)
-    wire [47:0] stage2_P = stage2_C - mult2;               // ポスト加減算器で処理される
+    wire [34:0] mult2    = st1_y0_dy[23:0] * st1_m_b_10_0; 
+    wire [47:0] stage2_P = stage2_C - mult2;               
     wire [23:0] x1_taylor = stage2_P[46:23];
 
     always @(posedge clk or negedge rst_n) begin
@@ -152,16 +142,9 @@ module fdiv (
         end
     end
 
-// ================================================================
-    // Stage 3: Final Calculation (DSP Multiply-Add + Single Stage MUX)
-    // ================================================================
+    wire [41:0] mult3_lo = st2_adjusted_a * st2_x1[16:0];  
+    wire [31:0] mult3_hi = st2_adjusted_a * st2_x1[23:17]; 
     
-    // ★ WNS改善: 25bit x 24bit 乗算を、DSPスライス(25x18)に収まるように
-    // 17bitと7bitに明示的に分割して計算させる
-    wire [41:0] mult3_lo = st2_adjusted_a * st2_x1[16:0];  // 25 x 17bit
-    wire [31:0] mult3_hi = st2_adjusted_a * st2_x1[23:17]; // 25 x 7bit
-    
-    // 分割した乗算結果とバイアスを合算する
     wire [48:0] q_final  = {mult3_hi, 17'b0} + mult3_lo + st2_bias;
 
     wire carry = q_final[47]; 

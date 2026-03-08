@@ -10,9 +10,6 @@ module fadd (
     output logic             out_valid   
 );
 
-    // =========================================================================
-    // STAGE 1: 比較、アライメントシフト、符号判定
-    // =========================================================================
     logic [31:0] c1_large, c1_small;
     logic [7:0]  c1_diff;
     logic [26:0] c1_mant_large, c1_mant_small;
@@ -23,7 +20,7 @@ module fadd (
     logic [7:0]  c1_exp_res;
 
     always_comb begin
-        if (input_a[30:0] < input_b[30:0]) begin // magnitude compare
+        if (input_a[30:0] < input_b[30:0]) begin 
             c1_large = input_b;
             c1_small = input_a;
         end else begin
@@ -35,17 +32,15 @@ module fadd (
         c1_mant_small = (c1_small[30:23] == 0) ? {1'b0, c1_small[22:0], 3'b0} : {1'b1, c1_small[22:0], 3'b0};
         c1_diff       = c1_large[30:23] - c1_small[30:23]; 
 
-        // シフト処理とStickyビットの抽出（多重代入を避ける）
         begin
             logic [26:0] temp_shifted;
-            if (c1_diff >= 8'd27) begin // shifted out completely
+            if (c1_diff >= 8'd27) begin 
                 temp_shifted = 27'b0;
                 c1_sticky    = |c1_mant_small; 
             end else begin
                 temp_shifted = c1_mant_small >> c1_diff;
                 c1_sticky    = |(c1_mant_small & ~(~27'b0 << c1_diff));
             end
-            // bit[0] に sticky を反映させる
             c1_mant_small_shifted = {temp_shifted[26:1], temp_shifted[0] | c1_sticky};
         end
 
@@ -79,10 +74,8 @@ module fadd (
         end
     end
 
-    // =========================================================================
-    // STAGE 2: 仮数の加減算、Leading Zero Countによる正規化準備
-    // =========================================================================
     logic [27:0] c2_mant_res;
+
     logic [4:0]  c2_zlc;
     logic [27:0] c2_mant_shifted_1;
     logic [7:0]  c2_exp_adjusted;
@@ -106,17 +99,14 @@ module fadd (
         c2_zlc = count_leading_zeros(c2_mant_res);
 
         if (c2_mant_res == 28'b0) begin
-            // 完全に相殺された場合 (例: 1.0 - 1.0 = 0.0)
             c2_exp_adjusted   = 8'd0;
             c2_mant_shifted_1 = 28'd0;
             c2_shift_remain   = 3'd0;
         end else if (c2_mant_res[27]) begin
-            // 加算によるオーバーフロー時: >>1 して Sticky bit(LSB) を保持
             c2_mant_shifted_1 = (c2_mant_res >> 1) | {27'b0, c2_mant_res[0]};
             c2_shift_remain   = 3'd0;
             c2_exp_adjusted   = s1_exp_res_reg + 8'd1;
         end else begin
-            // 通常の正規化シフト
             if (s1_exp_res_reg < {3'b0, c2_zlc}) begin
                 c2_exp_adjusted = 8'd0;
             end else begin
@@ -149,9 +139,6 @@ module fadd (
         end
     end
 
-    // =========================================================================
-    // STAGE 3: 正規化シフト完了と丸め処理
-    // =========================================================================
     logic [31:0] c3_result_comb;
     logic [27:0] mant_final_shifted;
     logic [22:0] frac_final;
@@ -168,7 +155,7 @@ module fadd (
         sticky = mant_final_shifted[0];
         lsb    = mant_final_shifted[3];
 
-        // Round to nearest, ties to even
+        // nearest round half to even
         round_up = guard & (round | sticky | lsb);
 
         if (s2_exp_reg == 8'd0) begin
@@ -196,7 +183,7 @@ module fadd (
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
-            result    <= 32'b0; // 31'b0 から修正
+            result    <= 32'b0; 
             out_valid <= 1'b0;
         end else begin
             result    <= c3_result_comb;
