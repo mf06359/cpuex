@@ -33,32 +33,33 @@ module top (
     logic req_rdy;
     
     logic cpu_clk; 
-    // assign cpu_clk = clk;
 
     // =========================================================
     // 自動テストシーケンサー (Miss & Hit 連続測定)
     // =========================================================
     typedef enum logic [2:0] {
         INIT,
-        REQ_MISS,   // 1回目のアクセス（必ずミスする）
+        REQ_MISS,   
         WAIT_MISS,
-        REQ_HIT,    // 2回目のアクセス（必ずヒットする）
+        REQ_HIT,    
         WAIT_HIT,
         DONE
     } state_t;
+
     state_t test_state = INIT;
 
     logic [26:0] init_wait_timer;
     logic [31:0] current_counter;
     
-    logic [11:0] miss_cycles; // ミスペナルティ保持用（下位12ビット）
-    logic [3:0]  hit_cycles;  // ヒットペナルティ保持用（上位4ビット）
+    logic [11:0] miss_cycles; 
+    logic [3:0]  hit_cycles;  
 
     always_ff @(posedge cpu_clk) begin
         if (!reset_n) begin
             test_state <= INIT;
             init_wait_timer <= '0;
             readtrigger <= 1'b0;
+            readtrigger_cache <= 1'b0; // 初期化追加
             writetrigger <= 1'b0;
             input_addr <= 32'h0;
             current_counter <= '0;
@@ -67,7 +68,7 @@ module top (
         end else begin
             case (test_state)
                 INIT: begin
-                    // DDR2メモリ初期化待ち (約0.5秒)
+                    // DDR2メモリ初期化待ち
                     if (init_wait_timer == 27'd50_000_000) begin
                         test_state <= REQ_MISS;
                     end else begin
@@ -80,7 +81,7 @@ module top (
                 // -------------------------------------
                 REQ_MISS: begin
                     if (req_rdy) begin
-                        input_addr <= 32'h0000_1000; // 測定用アドレス
+                        input_addr <= 32'h0000_1000;
                         readtrigger <= 1'b1;
                         readtrigger_cache <= 1'b1;
                         current_counter <= 0;
@@ -89,14 +90,12 @@ module top (
                 end
                 
                 WAIT_MISS: begin
-                    readtrigger <= 1'b0; // トリガーを1サイクルで落とす
-                    readtrigger_cache <= 1'b0; // トリガーを1サイクルで落とす
+                    readtrigger <= 1'b0;
+                    readtrigger_cache <= 1'b0;
                     
-                    // 待機中（req_rdy=0）はカウントアップ
                     if (!req_rdy || readtrigger) begin
                         current_counter <= current_counter + 1;
                     end 
-                    // データ到着（req_rdy=1）で結果を保存し、次のテストへ
                     else if (req_rdy && !readtrigger) begin
                         miss_cycles <= current_counter[11:0];
                         test_state <= REQ_HIT;
@@ -108,8 +107,9 @@ module top (
                 // -------------------------------------
                 REQ_HIT: begin
                     if (req_rdy) begin
-                        input_addr <= 32'h0000_1000; // 全く同じアドレスに再アクセス
+                        input_addr <= 32'h0000_1000;
                         readtrigger <= 1'b1;
+                        readtrigger_cache <= 1'b1; // ★ ここを追加！キャッシュに要求を送る
                         current_counter <= 0;
                         test_state <= WAIT_HIT;
                     end
@@ -117,6 +117,7 @@ module top (
                 
                 WAIT_HIT: begin
                     readtrigger <= 1'b0;
+                    readtrigger_cache <= 1'b0;     // ★ ここも追加！トリガーを落とす
                     
                     if (!req_rdy || readtrigger) begin
                         current_counter <= current_counter + 1;
@@ -135,8 +136,6 @@ module top (
     end
 
     // 測定結果の結合
-    // 上位4ビット(15:12) = ヒットにかかったサイクル数
-    // 下位12ビット(11:0) = ミスにかかったサイクル数
     assign led = {hit_cycles, miss_cycles};
 
     // =========================================================
@@ -162,12 +161,11 @@ module top (
         .reset_n(reset_n),
         
         .writetrigger(writetrigger),
-        .readtrigger(readtrigger_cache),
+        .readtrigger(readtrigger_cache), // キャッシュ用のトリガーに繋ぐ
         .input_addr(input_addr),
         .input_data(input_data),
         .req_rdy(req_rdy),
         .output_data(output_data),
         .cpu_clk_out(cpu_clk) 
     );
-
 endmodule
