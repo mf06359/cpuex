@@ -10,7 +10,7 @@ VERILATOR = verilator
 # --exe: 実行ファイルをビルド
 # --build: 生成されたMakefileを自動で叩いてビルドまで行う
 # -j 0: 並列ビルド
-VFLAGS = -Wall -Wno-fatal --cc --exe --build -j 0
+VFLAGS = -Wall --cc --exe --build -j 0 # -Wno-fatal 
 
 # C++のマルチスレッドを利用するためのフラグ (itof等で使用)
 THREAD_FLAGS = -CFLAGS "-std=c++14 -pthread" -LDFLAGS "-pthread"
@@ -67,10 +67,10 @@ fsqrt_10:
 	@echo "Running test_sqrt..."
 	./obj_dir/test_sqrt
 
-fsqrt_3:
+fsqrt:
 	@echo "Building fsqrt_3..."
-	$(VERILATOR) $(VFLAGS) fsqrt_3.sv test_sqrt_3.cpp \
-		--top-module fsqrt --prefix Vfsqrt_3 -o test_sqrt
+	$(VERILATOR) $(VFLAGS) fsqrt.sv test_sqrt.cpp \
+		--top-module fsqrt --prefix Vfsqrt -o test_sqrt
 	@echo "Running test_sqrt..."
 	./obj_dir/test_sqrt
 # ------------------------------------------
@@ -88,8 +88,8 @@ itof:
 # ------------------------------------------
 ftoi:
 	@echo "Building ftoi (using itof module internally)..."
-	$(VERILATOR) $(VFLAGS) $(THREAD_FLAGS) itof_without_fadd.sv test_ftoi.cpp \
-		--top-module itof --prefix Vitof -o test_ftoi
+	$(VERILATOR) $(VFLAGS) $(THREAD_FLAGS) ftoi.sv test_ftoi.cpp \
+		--top-module ftoi --prefix Vftoi -o test_ftoi
 	@echo "Running test_ftoi..."
 	./obj_dir/test_ftoi
 

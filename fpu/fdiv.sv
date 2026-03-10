@@ -109,10 +109,12 @@ module fdiv (
     reg st2_inf_C, st2_inf_N, st2_inf_S;
     reg st2_zero_C, st2_zero_N, st2_zero_S;
 
-    wire [47:0] stage2_C = {1'b0, st1_y0_dy[47:24], 23'b0}; 
-    wire [34:0] mult2    = st1_y0_dy[23:0] * st1_m_b_10_0; 
-    wire [47:0] stage2_P = stage2_C - mult2;               
-    wire [23:0] x1_taylor = stage2_P[46:23];
+    wire [47:0] stage2_C = {1'b0, st1_y0_dy[47:24], 23'b0}; // y_0
+    wire [34:0] mult2    = st1_y0_dy[23:0] * st1_m_b_10_0; // dy * delx
+/* verilator lint_off UNUSEDSIGNAL */
+    wire [47:0] stage2_P = stage2_C - {13'b0, mult2};               
+/* verilator lint_on UNUSEDSIGNAL */
+    wire [23:0] x1_taylor = stage2_P[46:23]; // the most pricise part of fixed point 
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -145,7 +147,9 @@ module fdiv (
     wire [41:0] mult3_lo = st2_adjusted_a * st2_x1[16:0];  
     wire [31:0] mult3_hi = st2_adjusted_a * st2_x1[23:17]; 
     
-    wire [48:0] q_final  = {mult3_hi, 17'b0} + mult3_lo + st2_bias;
+/* verilator lint_off UNUSEDSIGNAL */
+    wire [48:0] q_final  = {mult3_hi, 17'b0} + {7'b0, mult3_lo} + st2_bias;
+/* verilator lint_on UNUSEDSIGNAL */
 
     wire carry = q_final[47]; 
     wire norm  = q_final[46]; 

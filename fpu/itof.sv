@@ -58,18 +58,26 @@ module itof (
 
     logic [7:0]  next_exp;
     logic [22:0] next_frac;
+    /* verilator lint_off UNUSEDSIGNAL */
     logic [31:0] shifted_mant;
+    /* verilator lint_on UNUSEDSIGNAL */
     logic        guard;
     logic        round;
     logic        sticky;
     logic        lsb;
+    logic [7:0] temp_exp;
 
     always_comb begin
+        temp_exp = 8'b0;
+        shifted_mant = 32'd0;
+        guard = 1'b0;
+        round = 1'b0;
+        sticky = 1'b0;
+        lsb = 1'b0;
         if (s2_abs_i == 32'b0) begin
             next_exp  = 8'd0;
             next_frac = 23'd0;
         end else begin
-            logic [7:0] temp_exp;
             temp_exp = 8'd127 + (8'd31 - {3'b0, s2_lzc});
             shifted_mant = s2_abs_i << s2_lzc;
             
@@ -79,7 +87,7 @@ module itof (
             lsb    = shifted_mant[8];
 
             if (guard && (round || sticky || lsb)) begin
-                {next_exp, next_frac} = {temp_exp, shifted_mant[30:8]} + 24'd1;
+                {next_exp, next_frac} = {temp_exp, shifted_mant[30:8]} + 31'd1;
             end else begin
                 next_exp  = temp_exp;
                 next_frac = shifted_mant[30:8];

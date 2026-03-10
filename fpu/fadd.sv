@@ -140,7 +140,9 @@ module fadd (
     end
 
     logic [31:0] c3_result_comb;
+    /* verilator lint_off UNUSEDSIGNAL */
     logic [27:0] mant_final_shifted;
+    /* verilator lint_on UNUSEDSIGNAL */
     logic [22:0] frac_final;
     logic [7:0]  exp_final;
     logic        round_up;
@@ -148,6 +150,8 @@ module fadd (
     logic [23:0] frac_rounded;
 
     always_comb begin
+        frac_rounded = 24'b0;
+        c3_result_comb = 32'b0;
         mant_final_shifted = s2_mant_reg << {s2_shift_remain_reg, 2'b00};
 
         guard  = mant_final_shifted[2];

@@ -15,13 +15,19 @@ module fsqrt (
 initial begin
   $readmemh("fsqrt_table.hex", lut);
   for (int i = 0; i < 1024; i++) begin
-    lut_sq[i] = (48'(lut[i]) * lut[i]) >> 24;
+    lut_sq[i] = 24'((48'(lut[i]) * lut[i]) >> 24);
   end
 end
 
-logic [2:0] valid_reg;
+/* verilator lint_off UNUSEDSIGNAL */
+logic [23:0] delta_24;
 logic [2:0] is_zero_reg;
 logic [2:0] is_abnormal_reg;
+logic [47:0] P_out;
+logic [23:0] double_x1;
+logic [7:0] exp_reg_plus;
+/* verilator lint_on UNUSEDSIGNAL */
+logic [2:0] valid_reg;
 
 logic in_is_zero;
 logic in_is_abnormal;
@@ -58,7 +64,7 @@ logic sign_out;
 logic [23:0] a_fixed;
 logic [23:0] x_0;
 logic [23:0] x0_x0;
-logic [23:0] x_1;
+//logic [23:0] x_1;
 logic [9:0] lut_addr;
 assign lut_addr = {e_1[0], m_1[22:14]};
 
@@ -78,7 +84,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     sign_out <= 1'b0;
     a_fixed <= 24'b0;
   end else begin
-    exp_out <= (e_wo_bias >>> 1) + 8'd127;
+    exp_out <= 8'((e_wo_bias >>> 1) + 8'd127);
     sign_out <= s_1;
     if (e_1[0]) begin
       a_fixed <= {2'b01, m_1[22:1]};
@@ -89,21 +95,21 @@ always_ff @(posedge clk or negedge rst_n) begin
 end
 
 
-logic [23:0] double_x1;
 logic [23:0] a_x0_x0;
 logic [23:0] a_x0;
 
 always_comb begin
-  a_x0_x0 = (48'(a_fixed) * x0_x0) >> 24;
-  a_x0 = (48'(a_fixed) * x_0) >> 24;
+  a_x0_x0 = 24'((48'(a_fixed) * x0_x0) >> 24);
+  a_x0 = 24'((48'(a_fixed) * x_0) >> 24);
 end
 
 logic [23:0] a_x0_reg;
 logic signed [17:0] delta_reg; 
 logic [7:0] exp_reg;
-logic [7:0] exp_reg_plus;
 logic [7:0] exp_reg_minus;
 logic sign_reg;
+
+assign delta_24 = 24'h400000 - a_x0_x0;
 
 always_ff @(posedge clk or negedge rst_n) begin
   if (!rst_n) begin
@@ -114,7 +120,6 @@ always_ff @(posedge clk or negedge rst_n) begin
     exp_reg_minus <= 8'b0;
     sign_reg <= 1'b0;
   end else begin
-    logic [23:0] delta_24 = 24'h400000 - a_x0_x0;
     delta_reg <= delta_24[17:0]; 
 
     a_x0_reg <= a_x0;
@@ -128,7 +133,6 @@ end
 
 logic signed [24:0] a_x0_signed;
 logic signed [42:0] delta_mult;
-logic [47:0] P_out;
 logic [23:0] result_inner;
 logic [7:0] exp_final;
 logic [22:0] mant_final;
@@ -163,3 +167,4 @@ always_ff @(posedge clk or negedge rst_n) begin
 end
 endmodule
 
+`default_nettype wire
