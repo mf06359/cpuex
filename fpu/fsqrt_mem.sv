@@ -270,10 +270,6 @@ module fsqrt (
 24'h80f1c5, 24'h80d153, 24'h80b0f3, 24'h8090a2, 24'h807061, 24'h805031, 24'h803012, 24'h801002,
 };
 
-initial begin
-  $readmemh("fsqrt_table.mem", lut);
-  $readmemh("fsqrt_sq_table.mem", lut_sq);
-end
 
 /* verilator lint_off UNUSEDSIGNAL */
 logic [23:0] delta_24;
