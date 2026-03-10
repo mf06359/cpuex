@@ -32,7 +32,7 @@ module fdiv (
 
     (* ram_style = "block" *)reg [47:0] lut [0:4095]; 
     initial begin
-        $readmemh("taylor_lut.hex", lut);
+        $readmemh("taylor_lut.mem", lut);
     end
 
     reg st1_valid, st1_sign, st1_nan;

@@ -110,10 +110,30 @@ module cache (
     logic [31:0] word_w0, word_w1, word_w2, word_w3;
     always_comb begin
         case (offset_reg)
-            2'b00: begin word_w0 = cache_data_reg[0][31:0];   word_w1 = cache_data_reg[1][31:0];   word_w2 = cache_data_reg[2][31:0];   word_w3 = cache_data_reg[3][31:0];   end
-            2'b01: begin word_w0 = cache_data_reg[0][63:32];  word_w1 = cache_data_reg[1][63:32];  word_w2 = cache_data_reg[2][63:32];  word_w3 = cache_data_reg[3][63:32];  end
-            2'b10: begin word_w0 = cache_data_reg[0][95:64];  word_w1 = cache_data_reg[1][95:64];  word_w2 = cache_data_reg[2][95:64];  word_w3 = cache_data_reg[3][95:64];  end
-            2'b11: begin word_w0 = cache_data_reg[0][127:96]; word_w1 = cache_data_reg[1][127:96]; word_w2 = cache_data_reg[2][127:96]; word_w3 = cache_data_reg[3][127:96]; end
+            2'b00: begin 
+                word_w0 = cache_data_reg[0][31:0];   
+                word_w1 = cache_data_reg[1][31:0];   
+                word_w2 = cache_data_reg[2][31:0];   
+                word_w3 = cache_data_reg[3][31:0]; 
+            end
+            2'b01: begin 
+                word_w0 = cache_data_reg[0][63:32];
+                word_w1 = cache_data_reg[1][63:32];  
+                word_w2 = cache_data_reg[2][63:32];  
+                word_w3 = cache_data_reg[3][63:32];  
+            end
+            2'b10: begin 
+                word_w0 = cache_data_reg[0][95:64];  
+                word_w1 = cache_data_reg[1][95:64];  
+                word_w2 = cache_data_reg[2][95:64];  
+                word_w3 = cache_data_reg[3][95:64];  
+                end
+            2'b11: begin 
+                word_w0 = cache_data_reg[0][127:96]; 
+                word_w1 = cache_data_reg[1][127:96]; 
+                word_w2 = cache_data_reg[2][127:96]; 
+                word_w3 = cache_data_reg[3][127:96]; 
+            end
         endcase
     end
     
@@ -129,10 +149,30 @@ module cache (
         mod_w2 = cache_data_reg[2];
         mod_w3 = cache_data_reg[3];
         case (offset_reg)
-            2'b00: begin mod_w0[31:0]   = input_data_reg; mod_w1[31:0]   = input_data_reg; mod_w2[31:0]   = input_data_reg; mod_w3[31:0]   = input_data_reg; end
-            2'b01: begin mod_w0[63:32]  = input_data_reg; mod_w1[63:32]  = input_data_reg; mod_w2[63:32]  = input_data_reg; mod_w3[63:32]  = input_data_reg; end
-            2'b10: begin mod_w0[95:64]  = input_data_reg; mod_w1[95:64]  = input_data_reg; mod_w2[95:64]  = input_data_reg; mod_w3[95:64]  = input_data_reg; end
-            2'b11: begin mod_w0[127:96] = input_data_reg; mod_w1[127:96] = input_data_reg; mod_w2[127:96] = input_data_reg; mod_w3[127:96] = input_data_reg; end
+            2'b00: begin 
+                mod_w0[31:0]   = input_data_reg;
+                mod_w1[31:0]   = input_data_reg;
+                mod_w2[31:0]   = input_data_reg;
+                mod_w3[31:0]   = input_data_reg;
+            end
+            2'b01: begin 
+                mod_w0[63:32]  = input_data_reg;
+                mod_w1[63:32]  = input_data_reg;
+                mod_w2[63:32]  = input_data_reg;
+                mod_w3[63:32]  = input_data_reg;
+            end
+            2'b10: begin 
+                mod_w0[95:64]  = input_data_reg;
+                mod_w1[95:64]  = input_data_reg;
+                mod_w2[95:64]  = input_data_reg;
+                mod_w3[95:64]  = input_data_reg;
+            end
+            2'b11: begin 
+                mod_w0[127:96] = input_data_reg; 
+                mod_w1[127:96] = input_data_reg; 
+                mod_w2[127:96] = input_data_reg; 
+                mod_w3[127:96] = input_data_reg; 
+            end
         endcase
     end
 
@@ -281,10 +321,22 @@ module cache (
                             2'b11: write_back_data[127:96] = input_data_reg;
                         endcase
 
-                        if (victim_way_reg_saved == 2'd0) begin cache_memory_w0[index_reg] <= write_back_data; cache_tag_w0[index_reg] <= tag_reg; end
-                        if (victim_way_reg_saved == 2'd1) begin cache_memory_w1[index_reg] <= write_back_data; cache_tag_w1[index_reg] <= tag_reg; end
-                        if (victim_way_reg_saved == 2'd2) begin cache_memory_w2[index_reg] <= write_back_data; cache_tag_w2[index_reg] <= tag_reg; end
-                        if (victim_way_reg_saved == 2'd3) begin cache_memory_w3[index_reg] <= write_back_data; cache_tag_w3[index_reg] <= tag_reg; end
+                        if (victim_way_reg_saved == 2'd0) begin
+                            cache_memory_w0[index_reg] <= write_back_data;
+                            cache_tag_w0[index_reg] <= tag_reg; 
+                        end
+                        if (victim_way_reg_saved == 2'd1) begin
+                            cache_memory_w1[index_reg] <= write_back_data;
+                            cache_tag_w1[index_reg] <= tag_reg; 
+                        end
+                        if (victim_way_reg_saved == 2'd2) begin
+                            cache_memory_w2[index_reg] <= write_back_data;
+                            cache_tag_w2[index_reg] <= tag_reg; 
+                        end
+                        if (victim_way_reg_saved == 2'd3) begin
+                            cache_memory_w3[index_reg] <= write_back_data;
+                            cache_tag_w3[index_reg] <= tag_reg; 
+                        end
                         
                         valid_bits[index_reg][victim_way_reg_saved] <= 1'b1;
                         dirty_bits[index_reg][victim_way_reg_saved] <= 1'b1;
@@ -297,10 +349,22 @@ module cache (
 
                 WAIT_READ_RSP_FOR_READ: begin
                     if (fifo.rsp_en) begin
-                        if (victim_way_reg_saved == 2'd0) begin cache_memory_w0[index_reg] <= fifo.rsp.data; cache_tag_w0[index_reg] <= tag_reg; end
-                        if (victim_way_reg_saved == 2'd1) begin cache_memory_w1[index_reg] <= fifo.rsp.data; cache_tag_w1[index_reg] <= tag_reg; end
-                        if (victim_way_reg_saved == 2'd2) begin cache_memory_w2[index_reg] <= fifo.rsp.data; cache_tag_w2[index_reg] <= tag_reg; end
-                        if (victim_way_reg_saved == 2'd3) begin cache_memory_w3[index_reg] <= fifo.rsp.data; cache_tag_w3[index_reg] <= tag_reg; end
+                        if (victim_way_reg_saved == 2'd0) begin
+                            cache_memory_w0[index_reg] <= fifo.rsp.data;
+                            cache_tag_w0[index_reg] <= tag_reg; 
+                        end
+                        if (victim_way_reg_saved == 2'd1) begin
+                            cache_memory_w1[index_reg] <= fifo.rsp.data;
+                            cache_tag_w1[index_reg] <= tag_reg; 
+                        end
+                        if (victim_way_reg_saved == 2'd2) begin
+                            cache_memory_w2[index_reg] <= fifo.rsp.data;
+                            cache_tag_w2[index_reg] <= tag_reg; 
+                        end
+                        if (victim_way_reg_saved == 2'd3) begin
+                            cache_memory_w3[index_reg] <= fifo.rsp.data;
+                            cache_tag_w3[index_reg] <= tag_reg; 
+                        end
                         
                         valid_bits[index_reg][victim_way_reg_saved] <= 1'b1;
                         dirty_bits[index_reg][victim_way_reg_saved] <= 1'b0;

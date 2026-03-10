@@ -13,10 +13,8 @@ module fsqrt (
 (* ram_style = "block" *) reg [23:0] lut_sq [0:1023];
 
 initial begin
-  $readmemh("fsqrt_table.hex", lut);
-  for (int i = 0; i < 1024; i++) begin
-    lut_sq[i] = 24'((48'(lut[i]) * lut[i]) >> 24);
-  end
+  $readmemh("fsqrt_table.mem", lut);
+  $readmemh("fsqrt_sq_table.mem", lut_sq);
 end
 
 /* verilator lint_off UNUSEDSIGNAL */
@@ -42,7 +40,7 @@ assign out_valid = valid_reg[2];
 assign in_is_zero = (e_1 == 8'b0) && (m_1 == 23'b0);
 assign in_is_abnormal = (e_1 == 8'b11111111);
 
-always_ff @(posedge clk or negedge rst_n) begin
+always_ff @(posedge clk) begin // or negedge rst_n
   if (!rst_n) begin
     valid_reg <= 3'b000;
     is_abnormal_reg <= 3'b000;
@@ -78,7 +76,7 @@ always_ff @(posedge clk) begin
   x0_x0 <= lut_sq[lut_addr];
 end
 
-always_ff @(posedge clk or negedge rst_n) begin
+always_ff @(posedge clk) begin//or negedge rst_n
   if (!rst_n) begin
     exp_out <= 8'b0;
     sign_out <= 1'b0;
@@ -111,7 +109,7 @@ logic sign_reg;
 
 assign delta_24 = 24'h400000 - a_x0_x0;
 
-always_ff @(posedge clk or negedge rst_n) begin
+always_ff @(posedge clk) begin //or negedge rst_n
   if (!rst_n) begin
     delta_reg <= 18'sb0;
     a_x0_reg <= 24'b0;
@@ -152,7 +150,7 @@ always_comb begin
   end       
 end
 
-always_ff @(posedge clk or negedge rst_n) begin
+always_ff @(posedge clk) begin //or negedge rst_n
   if (!rst_n) begin
     result <= 32'b0;
   end else begin
