@@ -87,7 +87,7 @@ itof:
 # 6. ftoi (test_ftoi.cpp)
 # ------------------------------------------
 ftoi:
-	@echo "Building ftoi (using itof module internally)..."
+	@echo "Building ftoi (using ftoi module internally)..."
 	$(VERILATOR) $(VFLAGS) $(THREAD_FLAGS) ftoi.sv test_ftoi.cpp \
 		--top-module ftoi --prefix Vftoi -o test_ftoi
 	@echo "Running test_ftoi..."

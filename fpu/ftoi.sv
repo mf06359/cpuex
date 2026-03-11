@@ -27,7 +27,7 @@ module ftoi (
             s1_ovf     <= 1'b0;
         end else begin
             s1_valid <= input_valid;
-            if (input_valid) begin
+            if (!input_valid) begin
                 s1_valid <= 1'b0;
             end
             s1_sign  <= in_f[31];
