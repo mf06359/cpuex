@@ -12,12 +12,11 @@ module cache (
 );
 
     assign fifo.clk = clk;
-    
     assign fifo.rsp_rdy = ((state == WAIT_READ_RSP_FOR_WRITE) || (state == WAIT_READ_RSP_FOR_READ)) && fifo.rsp_en;
 
     localparam DATA_WIDTH = 32;
     localparam CACHE_DEPTH = 256;
-    localparam TAG_WIDTH = 20; 
+    localparam TAG_WIDTH = 22; 
     localparam INDEX_WIDTH = 8;
     localparam OFFSET_WIDTH = 2;
 
@@ -49,7 +48,7 @@ module cache (
     localparam WAIT_WRITE_BACK_FOR_WRITE = 5'b01001;
     localparam WAIT_READ_RSP_FOR_WRITE = 5'b10001;
     localparam WAIT_READ_RSP_FOR_READ = 5'b10000;
-    localparam WAIT_BETWEEN_REQS_FOR_READ = 5'b11000; 
+    localparam WAIT_BETWEEN_REQS_FOR_READ = 5'b11000;  
     localparam WAIT_BETWEEN_REQS_FOR_WRITE = 5'b11001; 
     localparam DONE = 5'b11111;
 
@@ -83,17 +82,17 @@ module cache (
                         
                         fifo.req_en <= 1'b0;
 
-                        tag_reg <= input_addr[31:12];
-                        index_reg <= input_addr[11:4];
-                        offset_reg <= input_addr[3:2];
+                        tag_reg <= input_addr[31:10];
+                        index_reg <= input_addr[9:2];
+                        offset_reg <= input_addr[1:0];
                         
                         input_addr_reg <= input_addr;
                         input_data_reg <= input_data;
-                        cache_tag_reg <= cache_tag[input_addr[11:4]];
-                        cache_data_reg <= cache_memory[input_addr[11:4]];
+                        cache_tag_reg <= cache_tag[input_addr[9:2]];
+                        cache_data_reg <= cache_memory[input_addr[9:2]];
                         
-                        dirty_bit_reg <= dirty_bits[input_addr[11:4]];
-                        valid_bit_reg <= valid_bits[input_addr[11:4]];
+                        dirty_bit_reg <= dirty_bits[input_addr[9:2]];
+                        valid_bit_reg <= valid_bits[input_addr[9:2]];
                         state <= COMP;
                     end
                 end
@@ -112,14 +111,14 @@ module cache (
                             if (valid_bit_reg && dirty_bit_reg) begin
                                 // Write Back
                                 fifo.req.cmd <= 1'b0; 
-                                fifo.req.addr <= {cache_tag_reg, index_reg, 4'b0000};
+                                fifo.req.addr <= {cache_tag_reg, index_reg, 2'b00};
                                 fifo.req.data <= cache_data_reg;
                                 fifo.req_en <= 1'b1;
                                 state <= WAIT_WRITE_BACK_FOR_READ;
                             end else begin
                                 // Allocate (Read)
                                 fifo.req.cmd <= 1'b1; 
-                                fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
+                                fifo.req.addr <= {tag_reg, index_reg, 2'b00};
                                 fifo.req.data <= 128'b0;
                                 fifo.req_en <= 1'b1;
                                 state <= WAIT_READ_LINE_FOR_READ;
@@ -141,14 +140,14 @@ module cache (
                             if (valid_bit_reg && dirty_bit_reg) begin
                                 // Write Back
                                 fifo.req.cmd <= 1'b0;
-                                fifo.req.addr <= {cache_tag_reg, index_reg, 4'b0000};
+                                fifo.req.addr <= {cache_tag_reg, index_reg, 2'b00};
                                 fifo.req.data <= cache_data_reg;
                                 fifo.req_en <= 1'b1;
                                 state <= WAIT_WRITE_BACK_FOR_WRITE;
                             end else begin
                                 // Allocate (Read)
                                 fifo.req.cmd <= 1'b1;
-                                fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
+                                fifo.req.addr <= {tag_reg, index_reg, 2'b00};
                                 fifo.req.data <= 128'b0;
                                 fifo.req_en <= 1'b1;
                                 state <= WAIT_READ_LINE_FOR_WRITE;
@@ -166,7 +165,7 @@ module cache (
 
                 WAIT_BETWEEN_REQS_FOR_READ: begin 
                     fifo.req.cmd <= 1'b1; // read
-                    fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
+                    fifo.req.addr <= {tag_reg, index_reg, 2'b00};
                     fifo.req.data <= 128'b0;
                     fifo.req_en <= 1'b1; 
                     state <= WAIT_READ_LINE_FOR_READ;
@@ -181,7 +180,7 @@ module cache (
 
                 WAIT_BETWEEN_REQS_FOR_WRITE: begin 
                     fifo.req.cmd <= 1'b1; // read
-                    fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
+                    fifo.req.addr <= {tag_reg, index_reg, 2'b00};
                     fifo.req.data <= 128'b0;
                     fifo.req_en <= 1'b1; 
                     state <= WAIT_READ_LINE_FOR_WRITE;
