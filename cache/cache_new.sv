@@ -17,7 +17,7 @@ module cache (
     localparam CACHE_DEPTH = 256;
     localparam TAG_WIDTH = 20; 
     localparam INDEX_WIDTH = 8;
-    localparam OFFSET_WIDTH = 4;
+    localparam OFFSET_WIDTH = 2;
 
     reg [32*(1 << OFFSET_WIDTH)-1:0] cache_memory [CACHE_DEPTH-1:0]; 
     reg [TAG_WIDTH-1:0] cache_tag [CACHE_DEPTH-1:0];
@@ -47,8 +47,8 @@ module cache (
     localparam WAIT_WRITE_BACK_FOR_WRITE = 5'b01001;
     localparam WAIT_READ_RSP_FOR_WRITE = 5'b10001;
     localparam WAIT_READ_RSP_FOR_READ = 5'b10000;
-    localparam WAIT_BETWEEN_REQS_FOR_READ = 5'b11000;  
-    localparam WAIT_BETWEEN_REQS_FOR_WRITE = 5'b11001; 
+    localparam WAIT_BETWEEN_REQS_FOR_READ = 5'b11000;  // ★追加: 連続リクエスト防止用
+    localparam WAIT_BETWEEN_REQS_FOR_WRITE = 5'b11001; // ★追加: 連続リクエスト防止用
     localparam DONE = 5'b11111;
 
     logic [4:0] state = IDLE;
@@ -83,7 +83,7 @@ module cache (
 
                         tag_reg <= input_addr[31:12];
                         index_reg <= input_addr[11:4];
-                        offset_reg <= input_addr[3:0];
+                        offset_reg <= input_addr[3:2];
                         
                         input_addr_reg <= input_addr;
                         input_data_reg <= input_data;
@@ -99,7 +99,7 @@ module cache (
                 COMP: begin
                     if (read_req_reg) begin
                         if (valid_bit_reg && (cache_tag_reg == tag_reg)) begin // HIT
-                            case (offset_reg[3:2])
+                            case (offset_reg)
                                 2'b00: output_data_reg <= cache_data_reg[31:0];
                                 2'b01: output_data_reg <= cache_data_reg[63:32];
                                 2'b10: output_data_reg <= cache_data_reg[95:64];
@@ -125,7 +125,7 @@ module cache (
                         end
                     end else if (write_req_reg) begin
                          if (valid_bit_reg && (cache_tag_reg == tag_reg)) begin // HIT
-                            case (offset_reg[3:2])
+                            case (offset_reg)
                                 2'b00: cache_memory[index_reg] <= {cache_data_reg[127:32], input_data_reg};
                                 2'b01: cache_memory[index_reg] <= {cache_data_reg[127:64], input_data_reg, cache_data_reg[31:0]};
                                 2'b10: cache_memory[index_reg] <= {cache_data_reg[127:96], input_data_reg, cache_data_reg[63:0]};
@@ -157,7 +157,7 @@ module cache (
 
                 WAIT_WRITE_BACK_FOR_READ: begin
                     if (fifo.req_rdy) begin
-                        fifo.req_en <= 1'b0; 
+                        fifo.req_en <= 1'b0; // ★ここで落とす！
                         state <= WAIT_BETWEEN_REQS_FOR_READ;
                     end
                 end
@@ -166,13 +166,13 @@ module cache (
                     fifo.req.cmd <= 1'b1; // read
                     fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
                     fifo.req.data <= 128'b0;
-                    fifo.req_en <= 1'b1; 
+                    fifo.req_en <= 1'b1; // ★ここで再度立てることで、確実な立ち上がりエッジが発生！
                     state <= WAIT_READ_LINE_FOR_READ;
                 end
 
                 WAIT_WRITE_BACK_FOR_WRITE: begin
                     if (fifo.req_rdy) begin
-                        fifo.req_en <= 1'b0; 
+                        fifo.req_en <= 1'b0; // ★ここで落とす！
                         state <= WAIT_BETWEEN_REQS_FOR_WRITE;
                     end
                 end
@@ -181,7 +181,7 @@ module cache (
                     fifo.req.cmd <= 1'b1; // read
                     fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
                     fifo.req.data <= 128'b0;
-                    fifo.req_en <= 1'b1; 
+                    fifo.req_en <= 1'b1; // ★ここで再度立てる！
                     state <= WAIT_READ_LINE_FOR_WRITE;
                 end
 
@@ -203,7 +203,7 @@ module cache (
                     if (fifo.rsp_en) begin
                         cache_tag[index_reg] <= tag_reg;
                         valid_bits[index_reg] <= 1'b1;
-                        case (offset_reg[3:2])
+                        case (offset_reg)
                             2'b00: cache_memory[index_reg] <= {fifo.rsp.data[127:32], input_data_reg};
                             2'b01: cache_memory[index_reg] <= {fifo.rsp.data[127:64], input_data_reg, fifo.rsp.data[31:0]};
                             2'b10: cache_memory[index_reg] <= {fifo.rsp.data[127:96], input_data_reg, fifo.rsp.data[63:0]};
@@ -221,7 +221,7 @@ module cache (
                         cache_tag[index_reg] <= tag_reg;
                         valid_bits[index_reg] <= 1'b1;
                         dirty_bits[index_reg] <= 1'b0;
-                        case (offset_reg[3:2])
+                        case (offset_reg)
                             2'b00: output_data_reg <= fifo.rsp.data[31:0];
                             2'b01: output_data_reg <= fifo.rsp.data[63:32];
                             2'b10: output_data_reg <= fifo.rsp.data[95:64];
