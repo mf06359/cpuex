@@ -9,12 +9,10 @@ module fsqrt (
     output logic out_valid
 );
 
-(* ram_style = "block" *) reg [23:0] lut [0:1023];
-(* ram_style = "block" *) reg [23:0] lut_sq [0:1023];
+(* ram_style = "block" *) reg [47:0] lut [0:1023];
 
 initial begin
-  $readmemh("fsqrt_table.mem", lut);
-  $readmemh("zero.mem", lut_sq);
+  $readmemh("fsqrt_concat_table.mem", lut);
 end
 
 /* verilator lint_off UNUSEDSIGNAL */
@@ -72,8 +70,8 @@ logic signed [8:0] e_wo_bias;
 assign e_wo_bias = $signed({1'b0, e_1}) - 9'sd127;
 
 always_ff @(posedge clk) begin
-  x_0 <= lut[lut_addr];
-  x0_x0 <= lut_sq[lut_addr];
+  x_0 <= lut[lut_addr][47:24];
+  x0_x0 <= lut[lut_addr][23:0];
 end
 
 always_ff @(posedge clk) begin//or negedge rst_n
