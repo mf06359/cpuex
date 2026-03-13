@@ -1,4 +1,3 @@
-// cache_g.sv
 module cache (
     master_fifo.master fifo,
     input logic clk,
@@ -12,14 +11,12 @@ module cache (
 );
 
     assign fifo.clk = clk;
-    
-    // ★修正1: データ受信待ちステートでデータが来た時のみ rd_en(rsp_rdy) を立ててアンダーフローを防ぐ
     assign fifo.rsp_rdy = ((state == WAIT_READ_RSP_FOR_WRITE) || (state == WAIT_READ_RSP_FOR_READ)) && fifo.rsp_en;
 
     localparam DATA_WIDTH = 32;
-    localparam CACHE_DEPTH = 256;
-    localparam TAG_WIDTH = 20; 
-    localparam INDEX_WIDTH = 8;
+    localparam CACHE_DEPTH = 1024;
+    localparam TAG_WIDTH = 18; 
+    localparam INDEX_WIDTH = 10;
     localparam OFFSET_WIDTH = 2;
 
     reg [32*(1 << OFFSET_WIDTH)-1:0] cache_memory [CACHE_DEPTH-1:0]; 
@@ -28,15 +25,9 @@ module cache (
     logic valid_bits [CACHE_DEPTH-1:0];
     logic dirty_bits [CACHE_DEPTH-1:0];
 
-    reg [TAG_WIDTH-1:0] tag;
-    reg [INDEX_WIDTH-1:0] index;
-    reg [OFFSET_WIDTH-1:0] offset;
-
-    always_comb begin
-        tag = input_addr[31:12];    
-        index = input_addr[11:4];   
-        offset = input_addr[3:2];   
-    end
+    reg [TAG_WIDTH-1:0] tag_reg;
+    reg [INDEX_WIDTH-1:0] index_reg;
+    reg [OFFSET_WIDTH-1:0] offset_reg;
 
     logic [31:0] output_data_reg;
     assign output_data = output_data_reg;
@@ -56,8 +47,8 @@ module cache (
     localparam WAIT_WRITE_BACK_FOR_WRITE = 5'b01001;
     localparam WAIT_READ_RSP_FOR_WRITE = 5'b10001;
     localparam WAIT_READ_RSP_FOR_READ = 5'b10000;
-    localparam WAIT_BETWEEN_REQS_FOR_READ = 5'b11000;  // ★追加: 連続リクエスト防止用
-    localparam WAIT_BETWEEN_REQS_FOR_WRITE = 5'b11001; // ★追加: 連続リクエスト防止用
+    localparam WAIT_BETWEEN_REQS_FOR_READ = 5'b11000;  
+    localparam WAIT_BETWEEN_REQS_FOR_WRITE = 5'b11001; 
     localparam DONE = 5'b11111;
 
     logic [4:0] state = IDLE;
@@ -89,22 +80,26 @@ module cache (
                         write_req_reg <= writetrigger;
                         
                         fifo.req_en <= 1'b0;
+
+                        tag_reg <= input_addr[31:14];
+                        index_reg <= input_addr[13:4];
+                        offset_reg <= input_addr[3:2];
                         
                         input_addr_reg <= input_addr;
                         input_data_reg <= input_data;
-                        cache_tag_reg <= cache_tag[index];
-                        cache_data_reg <= cache_memory[index];
+                        cache_tag_reg <= cache_tag[input_addr[13:4]];
+                        cache_data_reg <= cache_memory[input_addr[13:4]];
                         
-                        dirty_bit_reg <= dirty_bits[index];
-                        valid_bit_reg <= valid_bits[index];
+                        dirty_bit_reg <= dirty_bits[input_addr[13:4]];
+                        valid_bit_reg <= valid_bits[input_addr[13:4]];
                         state <= COMP;
                     end
                 end
 
                 COMP: begin
                     if (read_req_reg) begin
-                        if (valid_bit_reg && (cache_tag_reg == input_addr_reg[31:12])) begin // HIT
-                            case (input_addr_reg[3:2])
+                        if (valid_bit_reg && (cache_tag_reg == tag_reg)) begin // HIT
+                            case (offset_reg)
                                 2'b00: output_data_reg <= cache_data_reg[31:0];
                                 2'b01: output_data_reg <= cache_data_reg[63:32];
                                 2'b10: output_data_reg <= cache_data_reg[95:64];
@@ -115,43 +110,43 @@ module cache (
                             if (valid_bit_reg && dirty_bit_reg) begin
                                 // Write Back
                                 fifo.req.cmd <= 1'b0; 
-                                fifo.req.addr <= {cache_tag_reg, input_addr_reg[11:4], 4'b0000};
+                                fifo.req.addr <= {cache_tag_reg, index_reg, 4'b0000};
                                 fifo.req.data <= cache_data_reg;
                                 fifo.req_en <= 1'b1;
                                 state <= WAIT_WRITE_BACK_FOR_READ;
                             end else begin
                                 // Allocate (Read)
                                 fifo.req.cmd <= 1'b1; 
-                                fifo.req.addr <= {input_addr_reg[31:4], 4'b0000};
+                                fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
                                 fifo.req.data <= 128'b0;
                                 fifo.req_en <= 1'b1;
                                 state <= WAIT_READ_LINE_FOR_READ;
                             end
                         end
                     end else if (write_req_reg) begin
-                         if (valid_bit_reg && (cache_tag_reg == input_addr_reg[31:12])) begin // HIT
-                            case (input_addr_reg[3:2])
-                                2'b00: cache_memory[input_addr_reg[11:4]] <= {cache_data_reg[127:32], input_data_reg};
-                                2'b01: cache_memory[input_addr_reg[11:4]] <= {cache_data_reg[127:64], input_data_reg, cache_data_reg[31:0]};
-                                2'b10: cache_memory[input_addr_reg[11:4]] <= {cache_data_reg[127:96], input_data_reg, cache_data_reg[63:0]};
-                                2'b11: cache_memory[input_addr_reg[11:4]] <= {input_data_reg, cache_data_reg[95:0]};
+                         if (valid_bit_reg && (cache_tag_reg == tag_reg)) begin // HIT
+                            case (offset_reg)
+                                2'b00: cache_memory[index_reg] <= {cache_data_reg[127:32], input_data_reg};
+                                2'b01: cache_memory[index_reg] <= {cache_data_reg[127:64], input_data_reg, cache_data_reg[31:0]};
+                                2'b10: cache_memory[index_reg] <= {cache_data_reg[127:96], input_data_reg, cache_data_reg[63:0]};
+                                2'b11: cache_memory[index_reg] <= {input_data_reg, cache_data_reg[95:0]};
                             endcase
                             
-                            dirty_bits[input_addr_reg[11:4]] <= 1'b1;
+                            dirty_bits[index_reg] <= 1'b1;
                             output_data_reg <= 32'b0;
                             state <= DONE;
                         end else begin // MISS
                             if (valid_bit_reg && dirty_bit_reg) begin
                                 // Write Back
                                 fifo.req.cmd <= 1'b0;
-                                fifo.req.addr <= {cache_tag_reg, input_addr_reg[11:4], 4'b0000};
+                                fifo.req.addr <= {cache_tag_reg, index_reg, 4'b0000};
                                 fifo.req.data <= cache_data_reg;
                                 fifo.req_en <= 1'b1;
                                 state <= WAIT_WRITE_BACK_FOR_WRITE;
                             end else begin
                                 // Allocate (Read)
                                 fifo.req.cmd <= 1'b1;
-                                fifo.req.addr <= {input_addr_reg[31:4], 4'b0000};
+                                fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
                                 fifo.req.data <= 128'b0;
                                 fifo.req_en <= 1'b1;
                                 state <= WAIT_READ_LINE_FOR_WRITE;
@@ -160,39 +155,35 @@ module cache (
                     end
                 end
 
-                // ====================================================================
-                // ★究極の修正: Write-Back後に必ず req_en を 0 にして、1クロックのエッジを作る
-                // ====================================================================
                 WAIT_WRITE_BACK_FOR_READ: begin
                     if (fifo.req_rdy) begin
-                        fifo.req_en <= 1'b0; // ★ここで落とす！
+                        fifo.req_en <= 1'b0; 
                         state <= WAIT_BETWEEN_REQS_FOR_READ;
                     end
                 end
 
                 WAIT_BETWEEN_REQS_FOR_READ: begin 
                     fifo.req.cmd <= 1'b1; // read
-                    fifo.req.addr <= {input_addr_reg[31:4], 4'b0000};
+                    fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
                     fifo.req.data <= 128'b0;
-                    fifo.req_en <= 1'b1; // ★ここで再度立てることで、確実な立ち上がりエッジが発生！
+                    fifo.req_en <= 1'b1; 
                     state <= WAIT_READ_LINE_FOR_READ;
                 end
 
                 WAIT_WRITE_BACK_FOR_WRITE: begin
                     if (fifo.req_rdy) begin
-                        fifo.req_en <= 1'b0; // ★ここで落とす！
+                        fifo.req_en <= 1'b0; 
                         state <= WAIT_BETWEEN_REQS_FOR_WRITE;
                     end
                 end
 
                 WAIT_BETWEEN_REQS_FOR_WRITE: begin 
                     fifo.req.cmd <= 1'b1; // read
-                    fifo.req.addr <= {input_addr_reg[31:4], 4'b0000};
+                    fifo.req.addr <= {tag_reg, index_reg, 4'b0000};
                     fifo.req.data <= 128'b0;
-                    fifo.req_en <= 1'b1; // ★ここで再度立てる！
+                    fifo.req_en <= 1'b1; 
                     state <= WAIT_READ_LINE_FOR_WRITE;
                 end
-                // ====================================================================
 
                 WAIT_READ_LINE_FOR_WRITE: begin
                     if (fifo.req_rdy) begin
@@ -210,15 +201,15 @@ module cache (
 
                 WAIT_READ_RSP_FOR_WRITE: begin
                     if (fifo.rsp_en) begin
-                        cache_tag[input_addr_reg[11:4]] <= input_addr_reg[31:12];
-                        valid_bits[input_addr_reg[11:4]] <= 1'b1;
-                        case (input_addr_reg[3:2])
-                            2'b00: cache_memory[input_addr_reg[11:4]] <= {fifo.rsp.data[127:32], input_data_reg};
-                            2'b01: cache_memory[input_addr_reg[11:4]] <= {fifo.rsp.data[127:64], input_data_reg, fifo.rsp.data[31:0]};
-                            2'b10: cache_memory[input_addr_reg[11:4]] <= {fifo.rsp.data[127:96], input_data_reg, fifo.rsp.data[63:0]};
-                            2'b11: cache_memory[input_addr_reg[11:4]] <= {input_data_reg, fifo.rsp.data[95:0]};
+                        cache_tag[index_reg] <= tag_reg;
+                        valid_bits[index_reg] <= 1'b1;
+                        case (offset_reg)
+                            2'b00: cache_memory[index_reg] <= {fifo.rsp.data[127:32], input_data_reg};
+                            2'b01: cache_memory[index_reg] <= {fifo.rsp.data[127:64], input_data_reg, fifo.rsp.data[31:0]};
+                            2'b10: cache_memory[index_reg] <= {fifo.rsp.data[127:96], input_data_reg, fifo.rsp.data[63:0]};
+                            2'b11: cache_memory[index_reg] <= {input_data_reg, fifo.rsp.data[95:0]};
                         endcase
-                        dirty_bits[input_addr_reg[11:4]] <= 1'b1;
+                        dirty_bits[index_reg] <= 1'b1;
                         output_data_reg <= 32'b0;
                         state <= DONE;
                     end
@@ -226,11 +217,11 @@ module cache (
 
                 WAIT_READ_RSP_FOR_READ: begin
                     if (fifo.rsp_en) begin
-                        cache_memory[input_addr_reg[11:4]] <= fifo.rsp.data;
-                        cache_tag[input_addr_reg[11:4]] <= input_addr_reg[31:12];
-                        valid_bits[input_addr_reg[11:4]] <= 1'b1;
-                        dirty_bits[input_addr_reg[11:4]] <= 1'b0;
-                        case (input_addr_reg[3:2])
+                        cache_memory[index_reg] <= fifo.rsp.data;
+                        cache_tag[index_reg] <= tag_reg;
+                        valid_bits[index_reg] <= 1'b1;
+                        dirty_bits[index_reg] <= 1'b0;
+                        case (offset_reg)
                             2'b00: output_data_reg <= fifo.rsp.data[31:0];
                             2'b01: output_data_reg <= fifo.rsp.data[63:32];
                             2'b10: output_data_reg <= fifo.rsp.data[95:64];
