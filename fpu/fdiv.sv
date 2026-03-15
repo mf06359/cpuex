@@ -171,16 +171,14 @@ module fdiv (
             out_valid <= 1'b0;
         end else begin
             out_valid <= st2_valid;
-            if (st2_valid) begin
-                if (st2_nan) begin
-                    result <= QUIET_NAN;
-                end else if (out_is_inf) begin
-                    result <= {st2_sign, 8'hFF, 23'b0};
-                end else if (out_is_zero) begin
-                    result <= {st2_sign, 31'b0};
-                end else begin
-                    result <= {st2_sign, final_exp, final_fraction};
-                end
+            if (st2_nan) begin
+                result <= QUIET_NAN;
+            end else if (out_is_inf) begin
+                result <= {st2_sign, 8'hFF, 23'b0};
+            end else if (out_is_zero) begin
+                result <= {st2_sign, 31'b0};
+            end else begin
+                result <= {st2_sign, final_exp, final_fraction};
             end
         end
     end

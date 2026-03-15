@@ -18,38 +18,45 @@ end
 /* verilator lint_off UNUSEDSIGNAL */
 logic [23:0] delta_24;
 logic [2:0] is_zero_reg;
-logic [2:0] is_abnormal_reg;
+logic [2:0] is_pos_inf_reg; // 追加: +Inf専用の判定
+logic [2:0] is_nan_neg_reg; // 変更: NaNおよび負の数用
 logic [47:0] P_out;
 logic [23:0] double_x1;
 logic [7:0] exp_reg_plus;
-/* verilator lint_on UNUSEDSIGNAL */
 logic [2:0] valid_reg;
+/* verilator lint_on UNUSEDSIGNAL */
 
 logic in_is_zero;
-logic in_is_abnormal;
+logic in_is_pos_inf;
+logic in_is_nan_or_neg;
 
 logic is_zero_final;
-logic is_abnormal_final;
+logic is_pos_inf_final;
+logic is_nan_neg_final;
 
-assign is_zero_final = is_zero_reg[1];
-assign is_abnormal_final = is_abnormal_reg[1];
-assign out_valid = valid_reg[2];
+assign is_zero_final    = is_zero_reg[1];
+assign is_pos_inf_final = is_pos_inf_reg[1];
+assign is_nan_neg_final = is_nan_neg_reg[1];
 
-assign in_is_zero = (e_1 == 8'b0) && (m_1 == 23'b0);
-assign in_is_abnormal = (e_1 == 8'b11111111);
+// +Inf と NaN/負の数 を明確に分離する
+assign in_is_zero       = (input_a[30:0] == 31'b0);
+assign in_is_pos_inf    = (input_a == 32'h7F800000); 
+assign in_is_nan_or_neg = (input_a[31] && input_a[30:0] != 31'b0) || 
+                          ((&input_a[30:23]) && input_a[22:0] != 23'b0);
 
 always_ff @(posedge clk) begin // or negedge rst_n
   if (!rst_n) begin
-    valid_reg <= 3'b000;
-    is_abnormal_reg <= 3'b000;
-    is_zero_reg <= 3'b000;
+    valid_reg      <= 3'b000;
+    is_zero_reg    <= 3'b000;
+    is_pos_inf_reg <= 3'b000;
+    is_nan_neg_reg <= 3'b000;
   end else begin
-    valid_reg <= {valid_reg[1:0], input_valid};
-    is_abnormal_reg <= {is_abnormal_reg[1:0], in_is_abnormal};
-    is_zero_reg <= {is_zero_reg[1:0], in_is_zero}; 
+    valid_reg      <= {valid_reg[1:0], input_valid};
+    is_zero_reg    <= {is_zero_reg[1:0], in_is_zero}; 
+    is_pos_inf_reg <= {is_pos_inf_reg[1:0], in_is_pos_inf};
+    is_nan_neg_reg <= {is_nan_neg_reg[1:0], in_is_nan_or_neg}; 
   end
 end
-
 logic s_1;
 logic [7:0] e_1;
 logic [22:0] m_1;
@@ -60,10 +67,8 @@ logic sign_out;
 logic [23:0] a_fixed;
 logic [23:0] x_0;
 logic [23:0] x0_x0;
-//logic [23:0] x_1;
 logic [9:0] lut_addr;
 assign lut_addr = {e_1[0], m_1[22:14]};
-
 assign {s_1, e_1, m_1} = input_a; 
 
 logic signed [8:0] e_wo_bias;
@@ -89,7 +94,6 @@ always_ff @(posedge clk) begin//or negedge rst_n
     end
   end
 end
-
 
 logic [23:0] a_x0_x0;
 logic [23:0] a_x0;
@@ -126,7 +130,6 @@ always_ff @(posedge clk) begin //or negedge rst_n
   end
 end
 
-
 logic signed [24:0] a_x0_signed;
 logic signed [42:0] delta_mult;
 logic [23:0] result_inner;
@@ -148,19 +151,24 @@ always_comb begin
   end       
 end
 
+// ===== 最終出力ブロック =====
+// // ===== 最終出力ブロック =====
 always_ff @(posedge clk) begin //or negedge rst_n
   if (!rst_n) begin
     result <= 32'b0;
+    out_valid <= 1'b0;
   end else begin
-    if (is_zero_final) begin
-      result <= {sign_reg, 8'b0, 23'b0}; 
-    end else if (is_abnormal_final) begin
-      result <= {sign_reg, 8'hFF, 23'b0}; 
+    out_valid <= valid_reg[1];
+
+    if (is_nan_neg_final) begin
+      result <= 32'h7FC00000; // 負の数や NaN は Quiet NaN
+    end else if (is_pos_inf_final) begin
+      result <= 32'h7F800000; // +Inf の場合は +Inf をそのまま返す
+    end else if (is_zero_final) begin
+      result <= {sign_reg, 31'b0}; // 0 の場合は符号を維持 (+0 / -0)
     end else begin
-      result <= {sign_reg, exp_final, mant_final};
+      result <= {1'b0, exp_final, mant_final}; // 通常の計算結果
     end
   end
 end
 endmodule
-
-`default_nettype wire
